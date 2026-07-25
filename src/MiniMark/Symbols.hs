@@ -289,8 +289,12 @@ funcNames =
   , "Hom", "End", "Aut", "Ob", "Mor", "id", "op", "colim", "dom", "cod"
   ]
 
--- supMapSafe: ASCII char to superscript char, universally-supported subset
--- (digits, plus/minus/equals, parens, n, i).
+-- supMapSafe/subMapSafe vs the Full maps: the tier boundary is Unicode 4.1
+-- (2005). Everything at or below 4.1 is covered by the stock OS X 10.5/10.6
+-- font set (verified on a real 10.5 box with probe/mathprobe.txt); the
+-- Unicode 5.0 (2006) additions are NOT — they render as tofu there — so they
+-- live only in the Full maps. Uppercase superscript letters are included
+-- only where a real codepoint exists; C F Q S X Y Z have none.
 supMapSafe :: [(Char, Char)]
 supMapSafe =
   [ ('0', '\x2070')
@@ -310,16 +314,7 @@ supMapSafe =
   , (')', '\x207E')
   , ('n', '\x207F')
   , ('i', '\x2071')
-  ]
-
--- supMapFull: supMapSafe extended with superscript Latin letters drawn from
--- the Spacing Modifier Letters and Phonetic Extensions blocks. Uppercase
--- letters are included only where a real codepoint exists; C F Q S X Y Z
--- have no uppercase superscript form and are omitted.
-supMapFull :: [(Char, Char)]
-supMapFull =
-  supMapSafe ++
-  [ ('a', '\x1D43')
+  , ('a', '\x1D43')
   , ('b', '\x1D47')
   , ('c', '\x1D9C')
   , ('d', '\x1D48')
@@ -359,12 +354,18 @@ supMapFull =
   , ('R', '\x1D3F')
   , ('T', '\x1D40')
   , ('U', '\x1D41')
-  , ('V', '\x2C7D')
   , ('W', '\x1D42')
   ]
 
--- subMapSafe: ASCII char to subscript char, universally-supported subset
--- (digits, plus/minus/equals, parens).
+-- supMapFull: supMapSafe plus the Unicode 5.0 stragglers.
+supMapFull :: [(Char, Char)]
+supMapFull =
+  supMapSafe ++
+  [ ('V', '\x2C7D')
+  ]
+
+-- subMapSafe: Unicode <= 4.1 subset — digits/operators plus the eight
+-- subscript letters that existed by 2005 (see tier note above supMapSafe).
 subMapSafe :: [(Char, Char)]
 subMapSafe =
   [ ('0', '\x2080')
@@ -382,30 +383,31 @@ subMapSafe =
   , ('=', '\x208C')
   , ('(', '\x208D')
   , (')', '\x208E')
+  , ('a', '\x2090')
+  , ('e', '\x2091')
+  , ('i', '\x1D62')
+  , ('o', '\x2092')
+  , ('r', '\x1D63')
+  , ('u', '\x1D64')
+  , ('v', '\x1D65')
+  , ('x', '\x2093')
   ]
 
--- subMapFull: subMapSafe extended with subscript Latin letters (only the
--- letters that have a subscript codepoint; b c d f g q w y z are omitted).
+-- subMapFull: subMapSafe plus the Unicode 5.0 subscript letters (tofu on
+-- stock 10.5/10.6 fonts). Letters with no subscript codepoint at all
+-- (b c d f g q w y z) are omitted everywhere.
 subMapFull :: [(Char, Char)]
 subMapFull =
   subMapSafe ++
-  [ ('a', '\x2090')
-  , ('e', '\x2091')
-  , ('h', '\x2095')
-  , ('i', '\x1D62')
+  [ ('h', '\x2095')
   , ('j', '\x2C7C')
   , ('k', '\x2096')
   , ('l', '\x2097')
   , ('m', '\x2098')
   , ('n', '\x2099')
-  , ('o', '\x2092')
   , ('p', '\x209A')
-  , ('r', '\x1D63')
   , ('s', '\x209B')
   , ('t', '\x209C')
-  , ('u', '\x1D64')
-  , ('v', '\x1D65')
-  , ('x', '\x2093')
   ]
 
 -- styleBold: plain ASCII letters/digits to Mathematical Bold (no holes in
