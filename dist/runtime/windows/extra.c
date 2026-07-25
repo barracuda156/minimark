@@ -1,0 +1,339 @@
+/* Copyright 2025 Lennart Augustsson
+ * See LICENSE file for full license.
+ */
+#include <conio.h>
+#include <io.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <string.h>
+
+/*
+ * Find First Set
+ * This macro must be defined.
+ * It returns the number of the least significant bit that is set.
+ * Numberings starts from 1.  If no bit is set, it should return 0.
+ */
+//#pragma warning(disable : 4996)
+#if defined(_M_X64) || defined(_M_ARM64)
+#pragma intrinsic(_BitScanForward64)
+#pragma intrinsic(_BitScanReverse64)
+static INLINE int
+ffs(int64_t arg)
+{
+  unsigned long r;
+  if (_BitScanForward64(&r, arg))
+    return (int)(r+1);
+  else
+    return 0;
+}
+#define FFS ffs
+
+#if defined(_M_X64)
+#define POPCOUNT __popcnt64
+#elif defined(_M_IX86)
+#define POPCOUNT __popcnt
+#endif
+
+static INLINE uint64_t clz(uint64_t x) {
+  unsigned long count;
+  if (_BitScanReverse64(&count, x)) {
+    return 63 - (uint64_t)count;
+  } else {
+    return 64;
+  }
+}
+#define CLZ clz
+
+static INLINE uint64_t ctz(uint64_t x) {
+  unsigned long count;
+  if (_BitScanForward64(&count, x)) {
+    return (uint64_t)count;
+  } else {
+    return 64;
+  }
+}
+#define CTZ ctz
+#endif  /* #if defined(_M_X64) || defined(_M_ARM64) */
+
+/*
+ * This is the character used for comma-separation in printf.
+ * Defaults to "'".
+ * Windows does not support this.
+ */
+#define PCOMMA ""
+
+/*
+ * Get a raw input character.
+ * If undefined, the default always returns -1
+ */
+#define GETRAW getraw
+int
+getraw(void)
+{
+  static char buf[2];
+  int c;
+  if (buf[0]) {
+    c = buf[0];
+    buf[0] = buf[1];
+    buf[1] = 0;
+  } else {
+  tryagain:
+    c = _getch();
+    if (c == 0xe0 || c == 0x00) {
+      switch(_getch()) {
+      case 0x48: buf[1] = 'A'; break; /* Up arrow */
+      case 0x50: buf[1] = 'B'; break; /* Down arrow */
+      case 0x4d: buf[1] = 'C'; break; /* Right arrow */
+      case 0x4b: buf[1] = 'D'; break; /* Left arrow */
+      default: goto tryagain;
+      }
+      buf[0] = '[';
+      c = 0x1b;                 /* ESC */
+    }
+  }
+  return c;
+}
+
+/*
+ * Get time since some epoch in milliseconds.
+ * If undefined, return 0.
+ */
+#define GETTIMEMICRO gettimemicro
+
+uint64_t
+gettimemicro(void)
+{
+  FILETIME ft;
+  // 100-nanosecond intervals since January 1, 1601 (UTC)
+  GetSystemTimePreciseAsFileTime(&ft);
+  uint64_t intervals = ((uint64_t)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+  const uint64_t UNIX_EPOCH_OFFSET = 11644473600ULL * 10000000ULL;
+  intervals -= UNIX_EPOCH_OFFSET;
+  return intervals / 10;
+}
+
+/*
+ * Create a unique file name.
+ */
+char*
+tmpname(const char* prefix, const char* suffix)
+{
+  char tmpdir[MAX_PATH];
+  DWORD len = GetTempPathA(sizeof(tmpdir), tmpdir);
+  if (len == 0 || len > sizeof(tmpdir))
+    return 0;
+
+  /* Ensure prefix isn't too short */
+  if (!prefix || strlen(prefix) < 3) prefix = "tmp";  // GetTempFileName needs at least 3 chars
+
+  char tempFile[MAX_PATH];
+  if (GetTempFileNameA(tmpdir, prefix, 0, tempFile) == 0)
+    return 0;
+
+  /* Delete the file created by GetTempFileName */
+  DeleteFileA(tempFile);
+
+  /* Append suffix */
+  size_t total_len = strlen(tempFile) + strlen(suffix) + 1;
+  char *filename = malloc(total_len);
+  if (!filename)
+    return 0;
+  snprintf(filename, total_len, "%s%s", tempFile, suffix);
+
+  // Create the file exclusively to ensure it exists and is unique
+  int fd = _open(filename, _O_CREAT | _O_EXCL | _O_RDWR | _O_BINARY,
+                 _S_IREAD | _S_IWRITE);
+  if (fd == -1) {
+    free(filename);
+    return 0;
+  }
+  _close(fd);
+
+  return filename;
+}
+#define TMPNAME tmpname
+
+/* Return path to executable as a null-terminated UTF-8 string. */
+char*
+get_executable_path(void)
+{
+    DWORD size = MAX_PATH;
+    WCHAR *wbuf = malloc(size * sizeof(WCHAR));
+    if (!wbuf) return NULL;
+
+    DWORD len = GetModuleFileNameW(NULL, wbuf, size);
+    while (len == size && GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+        size *= 2;
+        WCHAR *new_buf = realloc(wbuf, size * sizeof(WCHAR));
+        if (!new_buf) { free(wbuf); return NULL; }
+        wbuf = new_buf;
+        len = GetModuleFileNameW(NULL, wbuf, size);
+    }
+
+    int utf8_len = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, NULL, 0, NULL, NULL);
+    char *utf8_buf = malloc(utf8_len);
+    if (utf8_buf) {
+        WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, utf8_buf, utf8_len, NULL, NULL);
+    }
+    free(wbuf);
+    return utf8_buf;
+}
+#define GET_EXECUTABLE_PATH get_executable_path
+
+/* Emulate directory functions, partially written by Gemini */
+
+struct dirent {
+  char d_name[MAX_PATH * 3];
+};
+
+typedef struct {
+  HANDLE hFind;
+  WIN32_FIND_DATAW findData;
+  struct dirent entry;
+  int first;
+} DIR;
+
+DIR*
+opendir(const char *path)
+{
+  DIR *d = (DIR*)malloc(sizeof(DIR));
+  if (!d)
+    return NULL;
+
+  WCHAR wpath[MAX_PATH];
+  MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, MAX_PATH);
+  wcscat_s(wpath, MAX_PATH, L"\\*");
+
+  d->hFind = FindFirstFileW(wpath, &d->findData);
+  if (d->hFind == INVALID_HANDLE_VALUE) {
+    free(d);
+    return NULL;
+  }
+  d->first = 1;
+  return d;
+}
+
+struct dirent*
+readdir(DIR *d)
+{
+  if (d->hFind == INVALID_HANDLE_VALUE)
+    return NULL;
+
+  if (d->first) {
+    d->first = 0;
+  } else {
+    if (!FindNextFileW(d->hFind, &d->findData))
+      return NULL;
+  }
+
+  WideCharToMultiByte(CP_UTF8, 0, d->findData.cFileName, -1, 
+                      d->entry.d_name, sizeof(d->entry.d_name), NULL, NULL);
+  return &d->entry;
+}
+
+int
+closedir(DIR *d)
+{
+  if (!d)
+    return -1;
+  if (d->hFind != INVALID_HANDLE_VALUE)
+    FindClose(d->hFind);
+  free(d);
+  return 0;
+}
+
+#define MKDIR(s, m) mkdir(s)
+
+int
+setenv(const char *name, const char *value, int overwrite)
+{
+  // POSIX specifies that if name is NULL, points to an empty string, 
+  // or contains an '=', the function should fail with EINVAL.
+  if (name == NULL || name[0] == '\0' || strchr(name, '=') != NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  // If overwrite is 0, we must check if the variable already exists.
+  // If it does, we successfully do nothing.
+  if (overwrite == 0 && getenv(name) != NULL) {
+    return 0; 
+  }
+
+  // _putenv_s returns 0 on success, and an error code on failure.
+  if (_putenv_s(name, value) != 0) {
+    // _putenv_s sets its own error codes, but we return -1 to match POSIX
+    return -1; 
+  }
+
+  return 0;
+}
+
+int
+unsetenv(const char *name)
+{
+  // Standard POSIX validation for the name
+  if (name == NULL || name[0] == '\0' || strchr(name, '=') != NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  // In the Windows C Runtime, setting a variable to an empty string ("") 
+  // effectively deletes it from the environment.
+  if (_putenv_s(name, "") != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
+
+#if defined(WANT_DIR)
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <io.h>
+
+#define PERM_SEARCH 8
+#define PERM_READ   4
+#define PERM_WRITE  2
+#define PERM_EXEC   1
+
+int
+get_permissions(const char *path)
+{
+  struct _stat st;
+  int perms = 0;
+    
+  if (_stat(path, &st) == -1) {
+    return -1;
+  }
+
+  if (st.st_mode & _S_IREAD)
+    perms |= PERM_READ;
+  if (st.st_mode & _S_IWRITE)
+    perms |= PERM_WRITE;
+  if (st.st_mode & _S_IFDIR) {
+    perms |= PERM_SEARCH; 
+  } else {
+    if (st.st_mode & _S_IEXEC) {
+      perms |= PERM_EXEC; 
+    }
+  }
+  return perms;
+}
+
+int
+set_permissions(const char *path, int perms)
+{
+  int wperms = 0;
+    
+  if (perms & PERM_READ)
+    wperms |= _S_IREAD;
+  if (perms & PERM_WRITE)
+    wperms |= _S_IWRITE;
+  if ((perms & PERM_EXEC) || (perms & PERM_SEARCH))
+    wperms |= _S_IEXEC;
+
+  return _chmod(path, wperms);
+}
+#endif  /* defined(WANT_DIR) */
