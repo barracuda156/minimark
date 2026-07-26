@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>../../minimark_rendering/math-sample.md</title>
+<title>Markdown Syntax Showcase</title>
 <style>
 body { font-family: Georgia, serif; max-width: 42em;
        margin: 2em auto; padding: 0 1em; line-height: 1.5; }
@@ -23,9 +23,10 @@ hr { border: none; border-top: 1px solid #bbb; }
 </style>
 </head>
 <body>
-<hr>
-<p>title: &quot;Markdown Syntax Showcase&quot; description: &quot;A comprehensive example of Markdown syntax supported by mdast.&quot; author: &quot;Mayank Chaudhari&quot; date: &quot;2025-03-03&quot; categories: [Markdown, Syntax, Documentation] tags: [mdast, markdown, reference]</p>
-<hr>
+<header>
+<h1 class="title">Markdown Syntax Showcase</h1>
+<p class="byline">Mayank Chaudhari · 2025-03-03</p>
+</header>
 <h1>Markdown Syntax Showcase</h1>
 <h2>9. Math Equations (KaTeX / LaTeX)</h2>
 <p>Displaying mathematical expressions.</p>

@@ -194,10 +194,24 @@ toWords = filter (not . null) . go []
 --------------------------------------------------------------------------
 -- Blocks
 
--- Meta is ignored until T1.4 adds the title-block rendering.
 renderAnsi :: AnsiOpts -> Doc -> String
-renderAnsi o (Doc _ bs) =
-  unlines (intercalate [""] (filter (not . null) (map (blockLines o 0) bs)))
+renderAnsi o (Doc m bs) =
+  unlines (intercalate [""] (filter (not . null) (metaLines o m : map (blockLines o 0) bs)))
+
+-- Title block (term/plain, design note §1): if any field set, title
+-- bold (H1 heading style, no underline bar), byline "author · date"
+-- dim (only fields present), blank line, then body.
+metaLines :: AnsiOpts -> Meta -> [String]
+metaLines o (Meta Nothing Nothing Nothing) = []
+metaLines o (Meta mt ma md) =
+  [emit o (headingStyle 1) t | Just t <- [mt]]
+  ++ [emit o plainS{sDim = True} b | Just b <- [byline]]
+  where
+    byline = case (ma, md) of
+      (Nothing, Nothing) -> Nothing
+      (Just a, Nothing)  -> Just a
+      (Nothing, Just d)  -> Just d
+      (Just a, Just d)   -> Just (a ++ " \x00B7 " ++ d)
 
 indentLines :: Int -> [String] -> [String]
 indentLines n = map (\l -> if null l then l else replicate n ' ' ++ l)

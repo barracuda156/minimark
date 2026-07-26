@@ -10,13 +10,27 @@ data LatexOpts = LatexOpts
   { loStandalone :: Bool
   }
 
--- Meta is ignored until T1.4 adds \title/\author/\date + \maketitle.
 renderLatex :: LatexOpts -> Doc -> String
-renderLatex o (Doc _ bs) =
+renderLatex o (Doc m bs) =
   let body = intercalate "\n" (map block bs)
   in if loStandalone o
-       then preamble ++ body ++ "\n\\end{document}\n"
+       then preamble ++ metaBlock m ++ body ++ "\n\\end{document}\n"
        else body ++ "\n"
+
+-- \title{}/\author{}/\date{} + \maketitle, standalone only (design
+-- note §1); omitted fields omitted, but \date{} emitted empty when
+-- author is set and date isn't, to suppress TeX's default today's date.
+metaBlock :: Meta -> String
+metaBlock (Meta Nothing Nothing Nothing) = ""
+metaBlock (Meta mt ma md) = concat
+  [ maybe "" (\t -> "\\title{" ++ escT t ++ "}\n") mt
+  , maybe "" (\a -> "\\author{" ++ escT a ++ "}\n") ma
+  , case (ma, md) of
+      (_, Just d)       -> "\\date{" ++ escT d ++ "}\n"
+      (Just _, Nothing) -> "\\date{}\n"
+      (Nothing, Nothing) -> ""
+  , "\\maketitle\n\n"
+  ]
 
 preamble :: String
 preamble = concat

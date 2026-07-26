@@ -14,13 +14,31 @@ data HtmlOpts = HtmlOpts
   , hoTitle      :: String
   }
 
--- Meta is ignored until T1.4 adds the header-block rendering.
 renderHtml :: HtmlOpts -> Doc -> String
-renderHtml o (Doc _ bs) =
-  let body = concatMap (block o) bs
+renderHtml o (Doc m bs) =
+  let content = concatMap (block o) bs
   in if hoStandalone o
-       then htmlHeader (hoTitle o) ++ body ++ "</body>\n</html>\n"
-       else body
+       then htmlHeader (hoTitle o) ++ metaHeader m ++ content ++ "</body>\n</html>\n"
+       else content
+
+-- <title> precedence: --title flag > mTitle > first filename (handled
+-- by hoTitle, set in Main.hs). Body header block only in standalone
+-- mode when a field is present; fragments skip meta entirely (design
+-- note: the embedder owns the page).
+metaHeader :: Meta -> String
+metaHeader (Meta Nothing Nothing Nothing) = ""
+metaHeader (Meta mt ma md) = concat
+  [ "<header>\n"
+  , maybe "" (\t -> "<h1 class=\"title\">" ++ esc t ++ "</h1>\n") mt
+  , maybe "" (\b -> "<p class=\"byline\">" ++ esc b ++ "</p>\n") byline
+  , "</header>\n"
+  ]
+  where
+    byline = case (ma, md) of
+      (Nothing, Nothing) -> Nothing
+      (Just a, Nothing)  -> Just a
+      (Nothing, Just d)  -> Just d
+      (Just a, Just d)   -> Just (a ++ " \x00B7 " ++ d)
 
 htmlHeader :: String -> String
 htmlHeader title = concat

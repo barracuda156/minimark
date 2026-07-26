@@ -14,16 +14,51 @@ import MiniMark.TexMath(parseMath)
 type Defs = [(String, (String, String))]   -- label -> (url, title)
 
 -- Reader-contract entry point (see Readers.hs): whole input -> Doc.
--- Front-matter extraction lands here (T1.4); meta is empty until then.
 parseDocument :: String -> Doc
-parseDocument s = Doc emptyMeta (parseDoc s)
+parseDocument s =
+  let ls = map (expandTabs . dropCR) (lines s)
+  in case ls of
+       "---":rest -> case extractFrontMatter rest of
+         Just (meta, body) -> Doc meta (parseLines body)
+         Nothing -> Doc emptyMeta (parseLines ls)
+       _ -> Doc emptyMeta (parseLines ls)
+  where dropCR l = [c | c <- l, c /= '\r']
+
+-- Front matter (T1.4): input starts with "---" on line 1; scan for a
+-- closing "---" or "..." line. Between them, collect top-level
+-- title:/author:/date: by exact lowercase line-prefix (YAML is
+-- case-sensitive; we honor that); value = rest of line trimmed, one
+-- matching pair of "/' quotes stripped. Everything else in the block
+-- is ignored. No closing fence found -> not front matter (Nothing):
+-- caller falls back to today's parse ("---" as HRule).
+extractFrontMatter :: [String] -> Maybe (Meta, [String])
+extractFrontMatter ls =
+  case break (\l -> trim l == "---" || trim l == "...") ls of
+    (_, []) -> Nothing
+    (block, _closeLine:body) ->
+      Just (foldl applyLine emptyMeta block, body)
+  where
+    applyLine m l
+      | Just v <- stripPfx "title:" l  = m{mTitle = Just (unquote v)}
+      | Just v <- stripPfx "author:" l = m{mAuthor = Just (unquote v)}
+      | Just v <- stripPfx "date:" l   = m{mDate = Just (unquote v)}
+      | otherwise = m
+    stripPfx pfx l = if pfx `isPrefixOf` l then Just (trim (drop (length pfx) l)) else Nothing
+    unquote v = case v of
+      '"':r | not (null r) && last r == '"'  -> init r
+      '\'':r | not (null r) && last r == '\'' -> init r
+      _ -> v
 
 parseDoc :: String -> [Block]
-parseDoc s =
-  let ls = map (expandTabs . dropCR) (lines s)
-      (defs, ls') = stripDefs ls
-  in parseBlocks defs ls'
+parseDoc s = parseLines (map (expandTabs . dropCR) (lines s))
   where dropCR l = [c | c <- l, c /= '\r']
+
+-- Shared by parseDoc and parseDocument (post front-matter): lines
+-- already tab-expanded and CR-stripped.
+parseLines :: [String] -> [Block]
+parseLines ls =
+  let (defs, ls') = stripDefs ls
+  in parseBlocks defs ls'
 
 expandTabs :: String -> String
 expandTabs = concatMap (\c -> if c == '\t' then "    " else [c])

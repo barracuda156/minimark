@@ -156,15 +156,17 @@ render o doc = case oFmt o of
         return (renderAnsi (AnsiOpts MNone (glyphs o) w False (ascii o)) doc)
     | f == "html" ->
         return (renderHtml (HtmlOpts (oStandalone o) (glyphs o) (ascii o)
-                                     (titleOf o)) doc)
+                                     (titleOf o doc)) doc)
     | f `elem` ["latex", "tex"] ->
         return (renderLatex (LatexOpts (oStandalone o)) doc)
     | otherwise -> die ("unknown format " ++ f)
 
-titleOf :: Opts -> String
-titleOf o = if null (oTitle o)
-              then (case oFiles o of (f:_) -> f; [] -> "minimark")
-              else oTitle o
+-- <title> precedence: --title flag > mTitle (front matter) > first filename.
+titleOf :: Opts -> Doc -> String
+titleOf o (Doc m _)
+  | not (null (oTitle o)) = oTitle o
+  | Just t <- mTitle m    = t
+  | otherwise = case oFiles o of (f:_) -> f; [] -> "minimark"
 
 ascii :: Opts -> Bool
 ascii o = oGlyphs o == "ascii"

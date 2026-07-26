@@ -5,11 +5,10 @@
 \usepackage{hyperref}
 \begin{document}
 
-\noindent\hrulefill
-
-title: "Markdown Syntax Showcase" description: "A comprehensive example of Markdown syntax supported by mdast." author: "Mayank Chaudhari" date: "2025-03-03" categories: [Markdown, Syntax, Documentation] tags: [mdast, markdown, reference]
-
-\noindent\hrulefill
+\title{Markdown Syntax Showcase}
+\author{Mayank Chaudhari}
+\date{2025-03-03}
+\maketitle
 
 \section{Markdown Syntax Showcase}
 

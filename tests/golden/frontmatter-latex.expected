@@ -1,0 +1,23 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\begin{document}
+
+\title{Field Notes from the G4}
+\author{Barracuda Labs}
+\date{2026-07-26}
+\maketitle
+
+\section{Body starts here}
+
+Front matter above must not leak into the rendered body as prose.
+
+A second heading follows.
+
+\subsection{Details}
+
+Some text after the meta block, to confirm normal parsing continues.
+
+\end{document}
