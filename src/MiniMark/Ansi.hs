@@ -184,8 +184,9 @@ toWords = filter (not . null) . go []
 --------------------------------------------------------------------------
 -- Blocks
 
-renderAnsi :: AnsiOpts -> [Block] -> String
-renderAnsi o bs =
+-- Meta is ignored until T1.4 adds the title-block rendering.
+renderAnsi :: AnsiOpts -> Doc -> String
+renderAnsi o (Doc _ bs) =
   unlines (intercalate [""] (filter (not . null) (map (blockLines o 0) bs)))
 
 indentLines :: Int -> [String] -> [String]

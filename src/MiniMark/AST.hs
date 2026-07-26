@@ -1,6 +1,21 @@
 -- minimark: shared document AST for all readers/writers.
 module MiniMark.AST where
 
+-- Document wrapper: metadata + content.  Readers produce a Doc,
+-- writers consume one.  Meta comes from front matter (markdown, T1.4)
+-- or document properties (future binary readers); until those land the
+-- readers fill in emptyMeta and the writers ignore it.
+data Doc = Doc Meta [Block]
+
+data Meta = Meta
+  { mTitle  :: Maybe String
+  , mAuthor :: Maybe String
+  , mDate   :: Maybe String
+  }
+
+emptyMeta :: Meta
+emptyMeta = Meta Nothing Nothing Nothing
+
 data Block
   = Heading Int [Inline]
   | Para [Inline]

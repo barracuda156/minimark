@@ -10,8 +10,9 @@ data LatexOpts = LatexOpts
   { loStandalone :: Bool
   }
 
-renderLatex :: LatexOpts -> [Block] -> String
-renderLatex o bs =
+-- Meta is ignored until T1.4 adds \title/\author/\date + \maketitle.
+renderLatex :: LatexOpts -> Doc -> String
+renderLatex o (Doc _ bs) =
   let body = intercalate "\n" (map block bs)
   in if loStandalone o
        then preamble ++ body ++ "\n\\end{document}\n"

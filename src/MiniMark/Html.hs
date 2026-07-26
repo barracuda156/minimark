@@ -14,8 +14,9 @@ data HtmlOpts = HtmlOpts
   , hoTitle      :: String
   }
 
-renderHtml :: HtmlOpts -> [Block] -> String
-renderHtml o bs =
+-- Meta is ignored until T1.4 adds the header-block rendering.
+renderHtml :: HtmlOpts -> Doc -> String
+renderHtml o (Doc _ bs) =
   let body = concatMap (block o) bs
   in if hoStandalone o
        then htmlHeader (hoTitle o) ++ body ++ "</body>\n</html>\n"

@@ -11,6 +11,10 @@ minimark -t latex -s FILE.md            # convert to LaTeX
 minimark -t plain FILE.md               # no escapes (pipes, files)
 ```
 
+Input format is Markdown; `-f rtf|odt|docx|idml` reserves the seam for
+the readers in progress (auto-detected from magic bytes / extension —
+today these give a clean "not implemented yet" instead of mojibake).
+
 ## Features
 
 - headings, emphasis/strong, inline code, links (incl. bare URLs), images-as-links

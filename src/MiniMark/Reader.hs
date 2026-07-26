@@ -1,12 +1,17 @@
 -- minimark: Markdown reader.  Line-oriented block parser plus a
 -- recursive-descent inline parser.  Deliberately dependency-free:
 -- runs on MicroHs base and ports verbatim to Idris2 later.
-module MiniMark.Reader(parseDoc, parseInlines) where
+module MiniMark.Reader(parseDocument, parseDoc, parseInlines) where
 
 import MiniMark.CharClass(isSp, isDig, isAlphaA, isAlnumA)
 import Data.List(isPrefixOf)
 import MiniMark.AST
 import MiniMark.TexMath(parseMath)
+
+-- Reader-contract entry point (see Readers.hs): whole input -> Doc.
+-- Front-matter extraction lands here (T1.4); meta is empty until then.
+parseDocument :: String -> Doc
+parseDocument s = Doc emptyMeta (parseDoc s)
 
 parseDoc :: String -> [Block]
 parseDoc s = parseBlocks (map (expandTabs . dropCR) (lines s))
