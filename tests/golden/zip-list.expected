@@ -1,0 +1,3 @@
+       31  stored   stored.txt
+      681  deflate  deflated.txt
+       33  deflate  sub/nested.md

@@ -7,8 +7,12 @@ import Data.List(isPrefixOf)
 import System.Environment(getArgs, lookupEnv)
 import System.Exit(exitSuccess)
 import System.IO
+import qualified Data.ByteString as BS
 
 import MiniMark.AST
+import MiniMark.Bytes(decodeUtf8)
+import MiniMark.Inflate(gunzip)
+import MiniMark.Zip(ZipEntry(..), zipEntries, zipFind, zipExtract)
 import MiniMark.Readers(parseFormat, readDocFile, readDocStdin)
 import MiniMark.MathRender(GlyphLevel(..))
 import MiniMark.Ansi(ColorMode(..), LinkMode(..), AnsiOpts(..), renderAnsi)
@@ -44,6 +48,9 @@ usage = unlines
   , "  --links=MODE     osc8 | off (default: off) — term only; osc8 emits"
   , "                   clickable OSC 8 hyperlinks instead of \"text (url)\""
   , "  --title=T        document title (html -s)"
+  , "  --zip=list       list the members of a zip container (docx/odt/idml/zip)"
+  , "  --zip=MEMBER     extract MEMBER: raw bytes with -o, UTF-8 text on stdout"
+  , "  --gunzip         decompress a gzip input (same output rule)"
   , "  -h, --help       this text"
   , "  --version        version"
   ]
@@ -59,16 +66,27 @@ data Opts = Opts
   , oStandalone :: Bool
   , oTitle      :: String
   , oLinks      :: String
+  , oZip        :: Maybe String
+  , oGunzip     :: Bool
   , oFiles      :: [String]
   }
 
 defOpts :: Opts
-defOpts = Opts "term" Nothing Nothing "auto" "bmp" Nothing Nothing False "" "off" []
+defOpts = Opts "term" Nothing Nothing "auto" "bmp" Nothing Nothing False "" "off"
+               Nothing False []
 
 main :: IO ()
 main = do
   args <- getArgs
   opts <- parseArgs defOpts args
+  case oZip opts of
+    Just spec -> zipCli spec opts
+    Nothing
+      | oGunzip opts -> gunzipCli opts
+      | otherwise    -> convert opts
+
+convert :: Opts -> IO ()
+convert opts = do
   ffmt <- case oFrom opts of
             Nothing -> return Nothing
             Just s -> case parseFormat s of
@@ -122,6 +140,7 @@ parseArgs o (a:as) = case a of
   "-o"           -> withVal as (\v r -> parseArgs o{oOut = Just v} r)
   "-s"           -> parseArgs o{oStandalone = True} as
   "--standalone" -> parseArgs o{oStandalone = True} as
+  "--gunzip"     -> parseArgs o{oGunzip = True} as
   "--ascii"      -> parseArgs o{oGlyphs = "ascii"} as
   _ | Just v <- eqOpt "--color" a   -> parseArgs o{oColor = v} as
     | Just v <- eqOpt "--glyphs" a  -> parseArgs o{oGlyphs = v} as
@@ -129,6 +148,7 @@ parseArgs o (a:as) = case a of
     | Just v <- eqOpt "--title" a   -> parseArgs o{oTitle = v} as
     | Just v <- eqOpt "--italics" a -> parseArgs o{oItalics = Just (v == "on")} as
     | Just v <- eqOpt "--links" a   -> parseArgs o{oLinks = v} as
+    | Just v <- eqOpt "--zip" a     -> parseArgs o{oZip = Just v} as
     | Just v <- eqOpt "-t" a        -> parseArgs o{oFmt = v} as
     | Just v <- eqOpt "-f" a        -> parseArgs o{oFrom = Just v} as
     | Just v <- eqOpt "--from" a    -> parseArgs o{oFrom = Just v} as
@@ -138,6 +158,62 @@ parseArgs o (a:as) = case a of
   where
     withVal (v:rest) k = k v rest
     withVal [] _ = die ("option " ++ a ++ " needs a value")
+
+--------------------------------------------------------------------------
+-- Container plumbing (T4.1): acceptance + debug surface for the zip and
+-- gzip machinery the Phase 5 binary readers build on.  Bytes go out
+-- exactly with -o (binary write); stdout gets a lenient UTF-8 decode,
+-- which is what you want for the XML members these containers hold.
+
+-- Containers need one named, seekable file: stdin is UTF-8 text by
+-- runtime construction (see Readers), so "-" is refused.
+containerFile :: Opts -> IO FilePath
+containerFile o = case oFiles o of
+  [f] | f /= "-" -> return f
+  _ -> die "--zip/--gunzip need exactly one named input file"
+
+zipCli :: String -> Opts -> IO ()
+zipCli spec o = do
+  f <- containerFile o
+  bs <- BS.readFile f
+  case zipEntries bs of
+    Left e -> die (f ++ ": " ++ e)
+    Right es
+      | spec == "list" -> emitText o (concatMap listLine es)
+      | otherwise -> case zipFind es spec of
+          Nothing -> die (f ++ ": no member " ++ spec)
+          Just en -> do
+            r <- zipExtract bs en
+            case r of
+              Left e    -> die (f ++ ": " ++ spec ++ ": " ++ e)
+              Right out -> emitBytes o out
+  where
+    listLine e = padL 9 (show (zeUSize e)) ++ "  "
+                 ++ padR 9 (methodName (zeMethod e)) ++ zeName e ++ "\n"
+    methodName 0 = "stored"
+    methodName 8 = "deflate"
+    methodName m = "method-" ++ show m
+    padL n s = replicate (n - length s) ' ' ++ s
+    padR n s = s ++ replicate (n - length s) ' '
+
+gunzipCli :: Opts -> IO ()
+gunzipCli o = do
+  f <- containerFile o
+  bs <- BS.readFile f
+  r <- gunzip bs
+  case r of
+    Left e    -> die (f ++ ": " ++ e)
+    Right out -> emitBytes o out
+
+emitBytes :: Opts -> BS.ByteString -> IO ()
+emitBytes o out = case oOut o of
+  Just f  -> BS.writeFile f out
+  Nothing -> putStr (decodeUtf8 out)
+
+emitText :: Opts -> String -> IO ()
+emitText o s = case oOut o of
+  Just f  -> writeFile f s
+  Nothing -> putStr s
 
 eqOpt :: String -> String -> Maybe String
 eqOpt name arg =

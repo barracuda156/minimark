@@ -57,23 +57,43 @@ plain nroff/troff without a UTF-8 locale.
 `none`. Emphasis uses italics only when the mode is truecolor or
 `--italics=on` — Apple Terminal pre-10.7 has no italic.
 
-## Building
+## Container plumbing (`--zip=`, `--gunzip`)
 
-Development build (needs `mhs` from MicroHs):
+The zip/gzip machinery under the future docx/odt/idml readers is
+exposed directly — handy on its own, and it is how the container layer
+gets exercised on real files:
 
 ```
-make        # uses mhs -C; MHS=/path/to/mhs to override
+minimark --zip=list FILE.docx                     # list members
+minimark --zip=word/document.xml FILE.docx        # member to stdout (UTF-8)
+minimark --zip=word/document.xml FILE.docx -o x.xml   # exact bytes
+minimark --gunzip FILE.gz [-o FILE]               # same for gzip
+```
+
+Stored and deflated members are supported (the only methods office
+formats use); everything is CRC-checked. zip64, multi-disk archives,
+encrypted members and >=2GB fields are refused with clean errors.
+
+## Building
+
+Development build (needs `mhs` from MicroHs, a C compiler, zlib):
+
+```
+make        # mhs generates minimark.c, cc compiles it with the
+            # vendored dist/runtime and cbits/ zlib shim
 ```
 
 ### PowerPC / any box with only a C compiler
 
 `dist/` carries pregenerated portable C plus the MicroHs runtime
-(Apache-2.0). On the target machine:
+(Apache-2.0); `cbits/` holds the small zlib shim behind the container
+readers (zlib ships with Mac OS X — nothing to install). On the target
+machine:
 
 ```
-cc -O2 -Idist/runtime -Idist/runtime/unix \
-   dist/runtime/main.c dist/runtime/eval.c dist/minimark.c \
-   -DHEAP_CELLS=8000000 -lm -o minimark
+cc -O2 -Idist/runtime -Idist/runtime/unix -Icbits \
+   dist/runtime/main.c dist/runtime/eval.c dist/minimark.c cbits/mm_zlib.c \
+   -DHEAP_CELLS=8000000 -lm -lz -o minimark
 ```
 
 `-DHEAP_CELLS=8000000` bakes a ~64MB default heap (32-bit) instead of

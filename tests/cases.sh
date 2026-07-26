@@ -41,6 +41,12 @@ rtf-in-plain|rtfbasic|-f rtf -t plain --width=80
 rtf-in-html|rtfbasic|-f rtf -t html
 rtf-in-ansi-bmp|rtfbasic|-f rtf -t term --glyphs=bmp --color=none --width=80
 rtf-in-macroman-plain|rtfmac|-f rtf -t plain --width=80
+zip-list|zipmixed|--zip=list
+zip-stored|zipmixed|--zip=stored.txt
+zip-deflated|zipmixed|--zip=deflated.txt
+docx-list|minidocx|--zip=list
+docx-document-xml|minidocx|--zip=word/document.xml
+gunzip-md|hellogz|--gunzip
 '
 
 # Map a short input key to its file, relative to the tests/ directory.
@@ -52,6 +58,9 @@ input_path() {
     frontmatter) echo 'inputs/frontmatter.md' ;;
     rtfbasic)   echo 'inputs/rtf-basic.rtf' ;;
     rtfmac)     echo 'inputs/rtf-macroman.rtf' ;;
+    zipmixed)   echo 'inputs/zip-mixed.zip' ;;
+    minidocx)   echo 'inputs/mini.docx' ;;
+    hellogz)    echo 'inputs/hello.md.gz' ;;
     *)          echo "unknown input key: $1" >&2; exit 1 ;;
   esac
 }
