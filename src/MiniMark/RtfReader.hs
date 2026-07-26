@@ -138,17 +138,19 @@ data Enc = EAnsi | EMac
 st0 :: [Int] -> St
 st0 mf = St False False False False 24 DBody 1 0 EAnsi mf
 
--- Accumulator threaded through the token walk.  curRun/curText/curFmt
--- together build the current paragraph: curText is the pending literal
--- run under curFmt (bold/ital/strk/mono), flushed to an Inline when the
--- format changes or the paragraph ends.
+-- Accumulator threaded through the token walk.  Holds only per-FLUSH
+-- state: the pending literal run itself (chars + font size) changes
+-- once per character, and mhs makes any accumulator living inside a
+-- constructor that is rebuilt per step O(n)-deep to force — a large
+-- flat paragraph then overflows the reduction stack (see
+-- docs/minimark-rtf-stackoverflow-analysis.md).  walk therefore
+-- threads the pending run as two plain arguments (txt, fs) instead.
+-- blocks/curRun are consed newest-first and reversed on read.
 data Acc = Acc
-  { blocks  :: [Block] -> [Block]   -- finished blocks, as a difference list
-  , curRun  :: [Inline] -> [Inline] -- inlines of the paragraph in progress
-  , curText :: String -> String     -- pending literal chars (flushed to a Str)
+  { blocks  :: [Block]              -- finished blocks, reversed
+  , curRun  :: [Inline]             -- paragraph in progress, reversed
   , curFmt  :: Fmt                   -- format the pending chars were typed in
   , curSty  :: Maybe Int            -- \sN seen for the current paragraph
-  , curFs   :: Int                  -- font size active at paragraph's text
   , styMap  :: [(Int, String)]      -- \sN -> style name (from stylesheet)
   }
 
@@ -160,7 +162,7 @@ fmtOf :: St -> Fmt
 fmtOf s = Fmt (bold s) (ital s) (strk s) (mono s)
 
 acc0 :: [(Int, String)] -> Acc
-acc0 sm = Acc id id id (Fmt False False False False) Nothing 0 sm
+acc0 sm = Acc [] [] (Fmt False False False False) Nothing sm
 
 --------------------------------------------------------------------------
 -- Entry point
@@ -174,9 +176,9 @@ parseRtf input =
   let toks  = tokenize input
       sm    = harvestStyles toks
       mf    = harvestMonoFonts toks
-      acc   = walk (st0 mf) (acc0 sm) toks
-      acc'  = endPara acc                    -- flush the final paragraph
-  in Doc emptyMeta (blocks acc' [])
+  in case walk (st0 mf) (acc0 sm) [] 0 toks of
+       (acc, txt, fs) ->                     -- flush the final paragraph
+         Doc emptyMeta (reverse (blocks (endPara acc txt fs)))
 
 --------------------------------------------------------------------------
 -- Stylesheet harvest (first pass)
@@ -201,13 +203,18 @@ findStyleSheet (_ : rest) = findStyleSheet rest
 
 -- Split a token list at the '}' that closes the current group (depth 0
 -- = the group we're already inside).  Returns (inside, afterClose).
+-- Tail-recursive with a reversed accumulator: the cons-as-you-return
+-- shape recursed once per token, which is O(group-size) stack when a
+-- big flat body is one 20k-token group.
 splitGroup :: Int -> [Tok] -> ([Tok], [Tok])
-splitGroup _ [] = ([], [])
-splitGroup d (t:ts) = case t of
-  TOpen  -> let (a, b) = splitGroup (d + 1) ts in (t:a, b)
-  TClose -> if d == 0 then ([], ts)
-                      else let (a, b) = splitGroup (d - 1) ts in (t:a, b)
-  _      -> let (a, b) = splitGroup d ts in (t:a, b)
+splitGroup = go []
+  where
+    go acc _ [] = (reverse acc, [])
+    go acc d (t:ts) = case t of
+      TOpen  -> go (t:acc) (d + 1) ts
+      TClose -> if d == 0 then (reverse acc, ts)
+                          else go (t:acc) (d - 1) ts
+      _      -> go (t:acc) d ts
 
 -- Each stylesheet entry is a top-level sub-group; scan them.
 collectEntries :: [Tok] -> [(Int, String)]
@@ -244,104 +251,115 @@ styleName = takeWhile (/= ';') . dropControls
 --------------------------------------------------------------------------
 -- Main walk (second pass)
 
-walk :: St -> Acc -> [Tok] -> Acc
-walk _  a [] = a
-walk s a (t:ts)
+-- The pending literal run rides in two plain arguments, NOT in Acc:
+-- txt is the pending chars REVERSED, fs the largest font size a visible
+-- char of the paragraph was typed at.  Consing onto a field of a record
+-- rebuilt per character is O(n)-deep to force under mhs; a plain
+-- argument is flat (docs/minimark-rtf-stackoverflow-analysis.md).  The
+-- control/symbol result tuples are cased apart immediately, so they
+-- never chain either.
+walk :: St -> Acc -> [Char] -> Int -> [Tok] -> (Acc, [Char], Int)
+walk _ a txt fs [] = (a, txt, fs)
+walk s a txt fs (t:ts)
   -- Inside a skipped destination, drop everything but keep the brace
   -- structure balanced (groups were split out, so plain tokens vanish).
   | dropping = case t of
-      TOpen  -> let (_, after) = splitGroup 0 ts in walk s a after
-      _      -> walk s a ts
+      TOpen  -> let (_, after) = splitGroup 0 ts in walk s a txt fs after
+      _      -> walk s a txt fs ts
   -- \uN Unicode fallback: the next `skipN` "characters" (a literal char,
   -- a decoded byte, or a nested {group} each count as one) are the ANSI
   -- approximation we discard because we already emitted the real cp.
   | skipN s > 0 = case t of
       TOpen  -> let (_, after) = splitGroup 0 ts
-                in walk s{skipN = skipN s - 1} a after
-      TClose -> walk s a ts     -- stray close: don't consume a skip slot
+                in walk s{skipN = skipN s - 1} a txt fs after
+      TClose -> walk s a txt fs ts  -- stray close: don't consume a skip slot
       -- A control word during the skip window still acts (e.g. \uc, \b)
       -- and does NOT consume a skip slot; only literal chars/bytes/groups
       -- are the fallback we discard.
-      TCtrl w marg -> let (s', a') = control s a w marg in walk s' a' ts
-      _      -> walk s{skipN = skipN s - 1} a ts
+      TCtrl w marg -> case control s a txt fs w marg of
+                        (s', a', txt', fs') -> walk s' a' txt' fs' ts
+      _      -> walk s{skipN = skipN s - 1} a txt fs ts
   | otherwise = case t of
       TOpen  ->
         -- Recurse into the group with a copy of the state; formatting set
         -- inside does not leak out, but emitted blocks/text do (threaded
-        -- through the returned Acc).
+        -- through the returned accumulator triple).
         let (inside, after) = splitGroup 0 ts
-            a' = walk s a inside
-        in walk s a' after
-      TClose -> walk s a ts          -- unmatched close: ignore, keep going
-      TCtrl w marg -> let (s', a') = control s a w marg in walk s' a' ts
-      TSym c       -> let (s', a') = symbol s a c in walk s' a' ts
-      TByte b      -> walk s (feedByte s a b) ts
-      TUni cp      -> walk (s{skipN = uc s}) (feedUni s a cp) ts
-      TChar c      -> walk s (feedChar s a c) ts
+        in case walk s a txt fs inside of
+             (a', txt', fs') -> walk s a' txt' fs' after
+      TClose -> walk s a txt fs ts   -- unmatched close: ignore, keep going
+      TCtrl w marg -> case control s a txt fs w marg of
+                        (s', a', txt', fs') -> walk s' a' txt' fs' ts
+      TSym c       -> case symbol s a txt fs c of
+                        (s', a', txt', fs') -> walk s' a' txt' fs' ts
+      TByte b      -> pushStr s a txt fs (decodeByte (enc s) b) ts
+      TUni cp      -> pushChar s{skipN = uc s} a txt fs (uniChar cp) ts
+      TChar c      -> pushChar s a txt fs c ts
   where dropping = dest s == DSkip || dest s == DStyleSheet || dest s == DField
 
 --------------------------------------------------------------------------
 -- Control words
 
-control :: St -> Acc -> String -> Maybe Int -> (St, Acc)
-control s a w marg = case w of
+control :: St -> Acc -> [Char] -> Int -> String -> Maybe Int -> (St, Acc, [Char], Int)
+control s a txt fs w marg = case w of
   -- destinations we drop wholesale
-  _ | w `elem` skipDests -> (s{dest = DSkip}, a)
-  "stylesheet"           -> (s{dest = DStyleSheet}, a)
-  "fldinst"              -> (s{dest = DField}, a)
+  _ | w `elem` skipDests -> (s{dest = DSkip}, a, txt, fs)
+  "stylesheet"           -> (s{dest = DStyleSheet}, a, txt, fs)
+  "fldinst"              -> (s{dest = DField}, a, txt, fs)
 
-  -- paragraph / line structure
-  "par"      -> (s, endPara a)
-  "pard"     -> (s, a{curSty = Nothing})   -- reset paragraph props
-  "line"     -> (s, pushInline s a (Str "\n"))
-  "tab"      -> (s, feedChar s a '\t')
-  "sect"     -> (s, endPara a)
-  "page"     -> (s, endPara a)
+  -- paragraph / line structure (endPara consumes the pending run;
+  -- pushInline consumes the pending text but fs is paragraph-scoped)
+  "par"      -> (s, endPara a txt fs, [], 0)
+  "pard"     -> (s, a{curSty = Nothing}, txt, fs)  -- reset paragraph props
+  "line"     -> (s, pushInline a txt (Str "\n"), [], fs)
+  "tab"      -> pushCold s a txt fs '\t'
+  "sect"     -> (s, endPara a txt fs, [], 0)
+  "page"     -> (s, endPara a txt fs, [], 0)
 
   -- list bullet fallback (\pntext group holds the marker; we already
   -- render its chars as text, so nothing extra needed — but \bullet is
   -- a control word in some producers)
-  "bullet"   -> (s, feedChar s a '\x2022')
-  "emdash"   -> (s, feedChar s a '\x2014')
-  "endash"   -> (s, feedChar s a '\x2013')
-  "lquote"   -> (s, feedChar s a '\x2018')
-  "rquote"   -> (s, feedChar s a '\x2019')
-  "ldblquote"-> (s, feedChar s a '\x201C')
-  "rdblquote"-> (s, feedChar s a '\x201D')
-  "enspace"  -> (s, feedChar s a ' ')
-  "emspace"  -> (s, feedChar s a ' ')
+  "bullet"   -> pushCold s a txt fs '\x2022'
+  "emdash"   -> pushCold s a txt fs '\x2014'
+  "endash"   -> pushCold s a txt fs '\x2013'
+  "lquote"   -> pushCold s a txt fs '\x2018'
+  "rquote"   -> pushCold s a txt fs '\x2019'
+  "ldblquote"-> pushCold s a txt fs '\x201C'
+  "rdblquote"-> pushCold s a txt fs '\x201D'
+  "enspace"  -> pushCold s a txt fs ' '
+  "emspace"  -> pushCold s a txt fs ' '
 
   -- character formatting (arg 0 turns the attribute OFF, RTF convention)
-  "b"        -> (s{bold = onOff marg}, a)
-  "i"        -> (s{ital = onOff marg}, a)
-  "strike"   -> (s{strk = onOff marg}, a)
-  "ul"       -> (s, a)                 -- underline: no AST node, ignore
-  "ulnone"   -> (s, a)
-  "plain"    -> (s{bold = False, ital = False, strk = False, mono = False}, a)
+  "b"        -> (s{bold = onOff marg}, a, txt, fs)
+  "i"        -> (s{ital = onOff marg}, a, txt, fs)
+  "strike"   -> (s{strk = onOff marg}, a, txt, fs)
+  "ul"       -> (s, a, txt, fs)        -- underline: no AST node, ignore
+  "ulnone"   -> (s, a, txt, fs)
+  "plain"    -> (s{bold = False, ital = False, strk = False, mono = False}, a, txt, fs)
 
   -- font selection: mono iff the fonttbl marked this font id \fmodern
   -- (harvested in the first pass).  This is how our own writer's \f1
   -- code spans and TextEdit's monospaced runs round-trip.
-  "f"        -> (s{mono = maybe False (`elem` monoFs s) marg}, a)
+  "f"        -> (s{mono = maybe False (`elem` monoFs s) marg}, a, txt, fs)
 
   -- font size (half-points): drives the heading heuristic when the
   -- paragraph has no named style.
-  "fs"       -> (s{fsize = maybe 24 id marg}, a)
+  "fs"       -> (s{fsize = maybe 24 id marg}, a, txt, fs)
 
   -- style ref: remember it for heading detection at \par time
-  "s"        -> (s, a{curSty = marg})
+  "s"        -> (s, a{curSty = marg}, txt, fs)
 
   -- encoding switches
-  "mac"      -> (s{enc = EMac}, a)
-  "ansi"     -> (s{enc = EAnsi}, a)
-  "pc"       -> (s{enc = EAnsi}, a)     -- cp437 unsupported; nearest-safe
-  "pca"      -> (s{enc = EAnsi}, a)
-  "uc"       -> (s{uc = maybe 1 id marg}, a)
-  "ansicpg"  -> (s, a)                  -- codepage number: cp1252 assumed
+  "mac"      -> (s{enc = EMac}, a, txt, fs)
+  "ansi"     -> (s{enc = EAnsi}, a, txt, fs)
+  "pc"       -> (s{enc = EAnsi}, a, txt, fs)  -- cp437 unsupported; nearest-safe
+  "pca"      -> (s{enc = EAnsi}, a, txt, fs)
+  "uc"       -> (s{uc = maybe 1 id marg}, a, txt, fs)
+  "ansicpg"  -> (s, a, txt, fs)         -- codepage number: cp1252 assumed
 
   -- swallow a \* -prefixed unknown destination's marker word if it slips
   -- through (handled as TSym '*' normally)
-  _          -> (s, a)                  -- unknown control word: ignore
+  _          -> (s, a, txt, fs)         -- unknown control word: ignore
   where onOff m = m /= Just 0
 
 -- Destinations whose entire content we discard.  \*\destination custom
@@ -366,68 +384,81 @@ skipDests =
 -- \~ non-breaking space, \- optional hyphen (drop), \_ non-breaking
 -- hyphen, \* marks an unknown destination -> skip its group.  We don't
 -- have St here for \* (it needs to set dest=DSkip); handle \* in walk.
-symbol :: St -> Acc -> Char -> (St, Acc)
-symbol s a c = case c of
-  '{'  -> (s, pushChar s a '{')
-  '}'  -> (s, pushChar s a '}')
-  '\\' -> (s, pushChar s a '\\')
-  '~'  -> (s, pushChar s a '\x00A0')     -- non-breaking space
-  '_'  -> (s, pushChar s a '\x2011')     -- non-breaking hyphen
-  '-'  -> (s, a)                         -- optional hyphen: drop
-  '*'  -> (s{dest = DSkip}, a)           -- \*\dest -> ignore whole group
-  '\n' -> (s, pushInline s a (Str "\n")) -- escaped newline = line break
-  '\r' -> (s, pushInline s a (Str "\n"))
-  _    -> (s, a)                         -- other symbols: ignore
+symbol :: St -> Acc -> [Char] -> Int -> Char -> (St, Acc, [Char], Int)
+symbol s a txt fs c = case c of
+  '{'  -> pushCold s a txt fs '{'
+  '}'  -> pushCold s a txt fs '}'
+  '\\' -> pushCold s a txt fs '\\'
+  '~'  -> pushCold s a txt fs '\x00A0'   -- non-breaking space
+  '_'  -> pushCold s a txt fs '\x2011'   -- non-breaking hyphen
+  '-'  -> (s, a, txt, fs)                -- optional hyphen: drop
+  '*'  -> (s{dest = DSkip}, a, txt, fs)  -- \*\dest -> ignore whole group
+  '\n' -> (s, pushInline a txt (Str "\n"), [], fs) -- escaped nl = line break
+  '\r' -> (s, pushInline a txt (Str "\n"), [], fs)
+  _    -> (s, a, txt, fs)                -- other symbols: ignore
 
--- Feed one literal character into the pending run, tracking font size
--- for the heading heuristic (record the largest size any visible char
--- in the paragraph was typed at, ignoring whitespace-only runs).
-feedChar :: St -> Acc -> Char -> Acc
-feedChar s a c = pushChar s a c
+-- Push one literal char into the pending run (the HOT path: once per
+-- character).  Tail-calls walk instead of returning a wrapped result —
+-- a per-char wrapper is exactly the O(n)-forcing shape this reader must
+-- avoid.  If the active format differs from the run's format, flush the
+-- run first so each Str gets a single consistent style wrapper.  fs is
+-- forced every push (a lazy max-chain would be as deep as the text).
+pushChar :: St -> Acc -> [Char] -> Int -> Char -> [Tok] -> (Acc, [Char], Int)
+pushChar s a txt fs c ts
+  | fmtOf s == curFmt a =
+      let fs' = fsBump s fs c in fs' `seq` walk s a (c : txt) fs' ts
+  | otherwise =
+      let a1  = (flushText a txt){curFmt = fmtOf s}
+          fs' = fsBump s fs c
+      in fs' `seq` walk s a1 [c] fs' ts
 
--- \'xx raw byte -> decode via the active cp1252/MacRoman table, then
--- feed the resulting Char(s).  A byte inside \uN's skip window is eaten
--- (handled by feedUni's skip, which decrements uc-count via pushChar? —
--- no: skip is tracked here).  We keep it simple: no pending-skip state
--- machine across tokens; \uN already emits its char and RTF's fallback
--- bytes follow, so we DON'T skip them here — see feedUni.
-feedByte :: St -> Acc -> Int -> Acc
-feedByte s a b = foldl (pushChar s) a (decodeByte (enc s) b)
+-- Same, for a decoded byte's expansion (\'xx can be the hot path in
+-- MacRoman/cp1252-heavy documents): push each char, then resume walk.
+pushStr :: St -> Acc -> [Char] -> Int -> String -> [Tok] -> (Acc, [Char], Int)
+pushStr s a txt fs [] ts = walk s a txt fs ts
+pushStr s a txt fs (c:cs) ts
+  | fmtOf s == curFmt a =
+      let fs' = fsBump s fs c in fs' `seq` pushStr s a (c : txt) fs' cs ts
+  | otherwise =
+      let a1  = (flushText a txt){curFmt = fmtOf s}
+          fs' = fsBump s fs c
+      in fs' `seq` pushStr s a1 [c] fs' cs ts
+
+-- Cold-path single-char push for control/symbol branches (\tab \bullet
+-- \{ ...); their result tuple is cased apart by walk immediately, so
+-- it never chains.
+pushCold :: St -> Acc -> [Char] -> Int -> Char -> (St, Acc, [Char], Int)
+pushCold s a txt fs c
+  | fmtOf s == curFmt a =
+      let fs' = fsBump s fs c in fs' `seq` (s, a, c : txt, fs')
+  | otherwise =
+      let a1  = (flushText a txt){curFmt = fmtOf s}
+          fs' = fsBump s fs c
+      in fs' `seq` (s, a1, [c], fs')
+
+-- Track the largest font size any visible char in the paragraph was
+-- typed at (whitespace ignored) — feeds the heading heuristic.
+fsBump :: St -> Int -> Char -> Int
+fsBump s fs c = if c == ' ' || c == '\t' then fs else max fs (fsize s)
 
 -- \uN Unicode code point.  N may be a signed 16-bit value (negative for
--- code points >= 0x8000); normalize to a real code point.  The uc-count
--- fallback characters that follow are ansi approximations we skip.  We
--- approximate skipping by dropping the next `uc` literal chars: track a
--- pending counter in Acc? To stay stateless-per-token we instead rely on
--- producers using \ucN with the exact count — implemented via feedUni
--- setting a skip that feedChar/feedByte honor.  Simplest correct form:
--- carry the skip in St is cleaner, but St is immutable per return here,
--- so we handle the common \uc1 case by having walk consult it — see the
--- pending field.  For robustness we DECODE the code point and let the
--- ANSI fallback char through only when uc=0.
-feedUni :: St -> Acc -> Int -> Acc
-feedUni s a n =
+-- code points >= 0x8000); normalize to a real code point, bound-check.
+-- The uc-count ANSI fallback chars that follow are discarded by walk
+-- via the skipN window it opens at the TUni site.
+uniChar :: Int -> Char
+uniChar n =
   let cp = if n < 0 then n + 0x10000 else n
-      ch = if cp >= 0 && cp <= 0x10FFFF then toEnum cp else '\xFFFD'
-  in pushChar s a ch
+  in if cp >= 0 && cp <= 0x10FFFF then toEnum cp else '\xFFFD'
 
--- Push one char into the pending literal run.  If the active format
--- differs from the run's format, flush the run first so each Str gets a
--- single consistent style wrapper.
-pushChar :: St -> Acc -> Char -> Acc
-pushChar s a c =
-  let a1 = if fmtOf s == curFmt a then a else (flushText a){curFmt = fmtOf s}
-      fs = if c == ' ' || c == '\t' then curFs a1 else max (curFs a1) (fsize s)
-  in a1{curText = curText a1 . (c :), curFs = fs}
-
--- Flush pending literal chars into the paragraph run as a styled Inline.
-flushText :: Acc -> Acc
-flushText a =
-  let t = curText a ""
-  in if null t
-       then a
-       else a{ curText = id
-             , curRun  = curRun a . (styleInline (curFmt a) t :) }
+-- Flush pending literal chars into the paragraph run as a styled
+-- Inline.  txt arrives reversed (pushes cons); reverse restores order.
+-- The type annotations on record-update cons expressions work around an
+-- mhs "Multiple constraint solutions for SetField" ambiguity.
+flushText :: Acc -> [Char] -> Acc
+flushText a txt =
+  if null txt
+    then a
+    else a{ curRun = (styleInline (curFmt a) (reverse txt) : curRun a) :: [Inline] }
 
 -- Wrap a literal string in the emphasis nodes its format calls for.
 -- Order (innermost first): CodeSpan is exclusive; otherwise nest
@@ -441,32 +472,32 @@ styleInline (Fmt b i k m) t
     wrap False _ x = x
 
 -- Push an already-built Inline (e.g. a hard line break) after flushing
--- any pending literal chars so ordering is preserved.
-pushInline :: St -> Acc -> Inline -> Acc
-pushInline _ a inl =
-  let a1 = flushText a
-  in a1{curRun = curRun a1 . (inl :)}
+-- any pending literal chars so ordering is preserved.  Callers reset
+-- their pending txt to []; fs carries on (it is paragraph-scoped).
+pushInline :: Acc -> [Char] -> Inline -> Acc
+pushInline a txt inl =
+  let a1 = flushText a txt
+  in a1{ curRun = (inl : curRun a1) :: [Inline] }
 
 --------------------------------------------------------------------------
 -- Paragraph flush + heading detection
 
--- End the current paragraph: flush pending text, decide Heading vs Para
--- (or drop an all-blank paragraph), append the block, and reset the
--- paragraph-scoped accumulator fields.
-endPara :: Acc -> Acc
-endPara a0 =
-  let a  = flushText a0
-      is = curRun a []
+-- End the current paragraph: flush the pending run (txt/fs, threaded
+-- outside Acc by walk), decide Heading vs Para (or drop an all-blank
+-- paragraph), append the block, and reset the paragraph-scoped fields.
+-- Callers reset their pending txt/fs to []/0.
+endPara :: Acc -> [Char] -> Int -> Acc
+endPara a0 txt fs =
+  let a  = flushText a0 txt
+      is = reverse (curRun a)
   in if allBlank is
-       then a{ curRun = id, curText = id, curSty = Nothing, curFs = 0 }
-       else let blk = case headingLevel a of
+       then a{ curRun = [] :: [Inline], curSty = Nothing }
+       else let blk = case headingLevel a fs of
                         Just n  -> Heading n (trimInlines is)
                         Nothing -> Para is
-            in a{ blocks  = blocks a . (blk :)
-                , curRun  = id
-                , curText = id
-                , curSty  = Nothing
-                , curFs   = 0 }
+            in a{ blocks = (blk : blocks a) :: [Block]
+                , curRun = [] :: [Inline]
+                , curSty = Nothing }
 
 -- Heading level for the just-finished paragraph.  First try the named
 -- style (\sN resolved through the stylesheet to "heading N" / "Heading
@@ -474,11 +505,11 @@ endPara a0 =
 -- (H1 \fs48, H2 \fs36, H3+ \fs28; body \fs24) and to common word-
 -- processor heading sizes.  Documented heuristic: a paragraph whose text
 -- is set >= 26 half-points (13pt) and is short is treated as a heading.
-headingLevel :: Acc -> Maybe Int
-headingLevel a =
+headingLevel :: Acc -> Int -> Maybe Int
+headingLevel a fs =
   case curSty a >>= \n -> lookup n (styMap a) of
     Just name | Just lvl <- headingName name -> Just lvl
-    _ -> sizeHeading (curFs a)
+    _ -> sizeHeading fs
 
 -- "Heading 1", "heading2", "Title" -> level.  Title maps to H1.
 headingName :: String -> Maybe Int
