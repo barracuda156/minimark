@@ -16,8 +16,8 @@ Task lists (T1.1)
 2. [x] second ordered task, done
 3. plain ordered item
 
-• [x] checked item with continuation second line of the same item, indented under
-      the checkbox
+• [x] checked item with continuation second line of the same item, indented
+      under the checkbox
 
 Strikethrough (T1.1)
 ────────────────────

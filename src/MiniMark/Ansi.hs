@@ -239,17 +239,18 @@ blockLines o depth b = case b of
 
   BulletList items ->
     let bullet = [bulletChar depth]
-        o' = o{aoWidth = aoWidth o - 2}
         lbl it = emit o plainS{sFg = Just CYellow} bullet ++ " " ++ checkPfx o it
-    in concatMap (\it -> item o' (lbl it) (2 + checkW o it) depth it) items
+        -- wrap width shrinks by the full label incl. checkbox, per item
+        oFor it = o{aoWidth = aoWidth o - (2 + checkW o it)}
+    in concatMap (\it -> item (oFor it) (lbl it) (2 + checkW o it) depth it) items
 
   OrderedList start items ->
     let nums = map show [start .. start + length items - 1]
         nw = maximum (map length nums)
-        o' = o{aoWidth = aoWidth o - (nw + 2)}
         mk n it = let lbl = replicate (nw - length n) ' ' ++ n ++ "."
                   in emit o plainS{sFg = Just CYellow} lbl ++ " " ++ checkPfx o it
-    in concat (zipWith (\n it -> item o' (mk n it) (nw + 2 + checkW o it) depth it) nums items)
+        oFor it = o{aoWidth = aoWidth o - (nw + 2 + checkW o it)}
+    in concat (zipWith (\n it -> item (oFor it) (mk n it) (nw + 2 + checkW o it) depth it) nums items)
 
   HRule ->
     [emit o plainS{sDim = True} (replicate (aoWidth o) '\x2500')]
