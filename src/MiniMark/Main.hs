@@ -15,6 +15,7 @@ import MiniMark.Ansi(ColorMode(..), LinkMode(..), AnsiOpts(..), renderAnsi)
 import MiniMark.Html(HtmlOpts(..), renderHtml)
 import MiniMark.Latex(LatexOpts(..), renderLatex)
 import MiniMark.Man(renderMan)
+import MiniMark.Rtf(renderRtf)
 
 version :: String
 version = "minimark 0.1.0"
@@ -25,7 +26,7 @@ usage = unlines
   , ""
   , "usage: minimark [OPTIONS] [FILE ...]        (stdin when no FILE)"
   , ""
-  , "  -t FORMAT        term (default) | html | latex | man | plain"
+  , "  -t FORMAT        term (default) | html | latex | man | rtf | plain"
   , "  -f FORMAT        input: markdown (default) | rtf | odt | docx | idml"
   , "                   auto-detected from magic bytes / extension;"
   , "                   only the markdown reader is implemented so far"
@@ -166,6 +167,8 @@ render o doc = case oFmt o of
         return (renderLatex (LatexOpts (oStandalone o)) doc)
     | f == "man" ->
         return (renderMan (titleOf o doc) doc)
+    | f == "rtf" ->
+        return (renderRtf doc)
     | otherwise -> die ("unknown format " ++ f)
 
 -- <title> precedence: --title flag > mTitle (front matter) > first filename.

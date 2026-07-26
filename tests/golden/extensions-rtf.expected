@@ -1,0 +1,44 @@
+{\rtf1\ansi\ansicpg1252\deff0\viewkind4
+{\fonttbl{\f0\fswiss Helvetica;}{\f1\fmodern Courier;}}
+{\colortbl;\red95\green175\blue255;\red0\green190\blue190;\red95\green195\blue95;\red215\green175\blue0;\red200\green120\blue245;\red150\green150\blue150;\red220\green95\blue95;\red0\green0\blue0;\red235\green235\blue235;}
+\uc1\f0\fs24
+\fs48\b Extensions\b0\fs24\par
+Corpus for Phase 1 markdown constructs added after the initial pipeline. Accumulates across tasks \u8212? add new sections, don't replace old ones.\par
+\fs36\b Task lists (T1.1)\b0\fs24\par
+\li360 \'b7\tab [ ] unchecked item\par
+\li0
+\li360 \'b7\tab [x] checked item (lowercase x)\par
+\li0
+\li360 \'b7\tab [x] checked item (uppercase X)\par
+\li0
+\li360 \'b7\tab plain bullet item, no checkbox\par
+\li0
+\li360 1.\tab [ ] first ordered task\par
+\li0
+\li360 2.\tab [x] second ordered task, done\par
+\li0
+\li360 3.\tab plain ordered item\par
+\li0
+\li360 \'b7\tab [x] checked item with continuation second line of the same item, indented under the checkbox\par
+\li0
+\fs36\b Strikethrough (T1.1)\b0\fs24\par
+This is \strike deleted text\strike0  inside a sentence.\par
+\strike Whole line struck through.\strike0 \par
+Mixed \b bold and \strike struck\strike0  together\b0 .\par
+\fs36\b Reference links, titles, images (T1.2)\b0\fs24\par
+Inline link with title: Anthropic (https://www.anthropic.com).\par
+Reference link: the docs (https://example.com/docs) explain more.\par
+Collapsed reference: Docs Ref (https://example.com/docs-ref) also works.\par
+Shortcut reference: Docs Ref (https://example.com/docs-ref) resolves the same way.\par
+Undefined reference stays literal: [nowhere][missing-ref].\par
+Undefined shortcut stays literal: [Also Missing].\par
+Image with title: [image: a small logo] (https://example.com/logo.png)\par
+Reference image: [image: alt text] (https://example.com/image.png)\par
+Paren url survives inline: Haskell (https://en.wikipedia.org/wiki/Haskell_(programming_language)) stays whole.\par
+Paren url by reference: the Haskell article (https://en.wikipedia.org/wiki/Haskell_(programming_language)).\par
+Paren-form title: point here (https://example.com/pt) uses (title) syntax.\par
+\fs36\b Math small fixes (T1.5)\b0\fs24\par
+Cube root: \u8731?(8). Fourth root: \u8732?(16). Other index: [5]\u8730?(32).\par
+Plain root unaffected: \u8730?2.\par
+Nested content under a cube root: \u8731?(x+y).\par
+}
