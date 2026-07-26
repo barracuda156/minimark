@@ -8,6 +8,7 @@ anywhere a C compiler exists.
 minimark FILE.md                        # render to terminal (ANSI)
 minimark -t html -s FILE.md -o out.html # convert to standalone HTML
 minimark -t latex -s FILE.md            # convert to LaTeX
+minimark -t man FILE.md                 # convert to man(7) / roff
 minimark -t plain FILE.md               # no escapes (pipes, files)
 ```
 
@@ -37,6 +38,17 @@ today these give a clean "not implemented yet" instead of mojibake).
 | `bmp` (default) | BMP codepoints only — `\mathbb{R}`→ℝ via letterlike block; safe with 10.5/10.6 system fonts |
 | `full` | plane-1 math alphabets — `\mathcal{C}`→𝒞, `\pi_i`→πᵢ with full sub/superscript letters; needs modern font coverage (contour + fallback works) |
 | `ascii` | math rendered as raw TeX — for terminals with no Unicode |
+
+## man / roff output (`-t man`)
+
+Emits man(7) macros (`.SH`/`.SS` headings, `.PP` paragraphs, `.IP`
+lists, `.TS`/`.TE` tables via tbl, `\fB`/`\fI` bold/italic). Code
+blocks use `.EX`/`.EE`, which need groff 1.22+; a `.nf`/`.fi` comment
+sits next to each block in the output as a fallback note for older
+groff. `.TH` is built from front-matter `title`/`date` when present,
+else `--title` / the first filename, section 7. Non-ASCII characters
+escape to `\[uXXXX]` (`groff_char(7)` form) so output is portable to
+plain nroff/troff without a UTF-8 locale.
 
 ## Color (`--color=`)
 

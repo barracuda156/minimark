@@ -1,0 +1,58 @@
+.TH "INPUTS/EXTENSIONS.MD" 7
+.SH "Extensions"
+.PP
+Corpus for Phase 1 markdown constructs added after the initial pipeline. Accumulates across tasks \[u2014] add new sections, don't replace old ones.
+.SS "Task lists (T1.1)"
+.IP \(bu 2
+[ ] unchecked item
+.IP \(bu 2
+[x] checked item (lowercase x)
+.IP \(bu 2
+[x] checked item (uppercase X)
+.IP \(bu 2
+plain bullet item, no checkbox
+.IP 1. 4
+[ ] first ordered task
+.IP 2. 4
+[x] second ordered task, done
+.IP 3. 4
+plain ordered item
+.IP \(bu 2
+[x] checked item with continuation second line of the same item, indented under the checkbox
+.SS "Strikethrough (T1.1)"
+.PP
+This is deleted text inside a sentence.
+.PP
+Whole line struck through.
+.PP
+Mixed \fBbold and struck together\fR.
+.SS "Reference links, titles, images (T1.2)"
+.PP
+Inline link with title: Anthropic (https://www.anthropic.com).
+.PP
+Reference link: the docs (https://example.com/docs) explain more.
+.PP
+Collapsed reference: Docs Ref (https://example.com/docs-ref) also works.
+.PP
+Shortcut reference: Docs Ref (https://example.com/docs-ref) resolves the same way.
+.PP
+Undefined reference stays literal: [nowhere][missing-ref].
+.PP
+Undefined shortcut stays literal: [Also Missing].
+.PP
+Image with title: [image: a small logo] (https://example.com/logo.png)
+.PP
+Reference image: [image: alt text] (https://example.com/image.png)
+.PP
+Paren url survives inline: Haskell (https://en.wikipedia.org/wiki/Haskell_(programming_language)) stays whole.
+.PP
+Paren url by reference: the Haskell article (https://en.wikipedia.org/wiki/Haskell_(programming_language)).
+.PP
+Paren-form title: point here (https://example.com/pt) uses (title) syntax.
+.SS "Math small fixes (T1.5)"
+.PP
+Cube root: \[u221B](8). Fourth root: \[u221C](16). Other index: [5]\[u221A](32).
+.PP
+Plain root unaffected: \[u221A]2.
+.PP
+Nested content under a cube root: \[u221B](x+y).
