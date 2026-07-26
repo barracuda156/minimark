@@ -29,7 +29,7 @@ usage = unlines
   , "  -t FORMAT        term (default) | html | latex | man | rtf | plain"
   , "  -f FORMAT        input: markdown (default) | rtf | odt | docx | idml"
   , "                   auto-detected from magic bytes / extension;"
-  , "                   only the markdown reader is implemented so far"
+  , "                   markdown and rtf readers are implemented so far"
   , "  -o FILE          write output to FILE"
   , "  -s, --standalone full document (html/latex)"
   , "  --color=MODE     auto (default) | none | 16 | true"

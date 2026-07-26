@@ -29,6 +29,7 @@ import System.IO
 import System.IO.Base(openBinaryFile)
 import MiniMark.AST
 import MiniMark.Reader(parseDocument)
+import MiniMark.RtfReader(parseRtf)
 
 data Format = FMarkdown | FRtf | FOdt | FDocx | FIdml
   deriving (Eq)
@@ -64,6 +65,13 @@ readDocFile mfmt f = do
     Right FMarkdown -> do
       txt <- readFile f
       return (Right (parseDocument txt))
+    Right FRtf -> do
+      -- RTF is 7-bit ASCII + \'xx / \uN escapes, but may carry raw
+      -- cp1252/MacRoman high bytes; read it through a binary handle so
+      -- OUR tables decode them, not MicroHs's UTF-8 transducer (which
+      -- would hard-error on a stray 0x92).  One Char = one byte here.
+      bytes <- readBinaryFile f
+      return (Right (parseRtf bytes))
     Right fmt -> return (Left (f ++ ": " ++ formatName fmt
                                ++ " reader not implemented yet"))
     Left err -> return (Left (f ++ ": " ++ err))
@@ -72,12 +80,31 @@ readDocStdin :: Maybe Format -> IO (Either String Doc)
 readDocStdin mfmt = case mfmt of
   Just FMarkdown -> md
   Nothing        -> md
+  -- RTF is a text format (7-bit ASCII + \'xx escapes), so it can come
+  -- through stdin's UTF-8 transducer as long as it carries no raw high
+  -- bytes.  Word/TextEdit escape non-ASCII as \'xx or \uN anyway; a raw
+  -- high byte on stdin would still crash the transducer, so pipe a file
+  -- through `-f rtf FILE` for MacRoman-heavy vintage docs.
+  Just FRtf -> do
+      txt <- getContents
+      return (Right (parseRtf txt))
   Just fmt -> return (Left ("stdin: " ++ formatName fmt
                             ++ " input needs a named file"))
   where
     md = do
       txt <- getContents
       return (Right (parseDocument txt))
+
+-- Read a whole file as raw bytes-as-Chars through a binary handle.
+-- hGetContents is lazy; force the entire string (seqList) before the
+-- close so no byte is read after hClose.  Used by the RTF reader, whose
+-- input may contain cp1252/MacRoman high bytes.
+readBinaryFile :: FilePath -> IO String
+readBinaryFile f = do
+  h <- openBinaryFile f ReadMode
+  s <- hGetContents h
+  seqList s (hClose h)
+  return s
 
 --------------------------------------------------------------------------
 -- Detection

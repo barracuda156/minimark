@@ -1,0 +1,20 @@
+A Heading One
+═════════════
+
+Ordinary paragraph text with a bold word, an italic word, and ~~struck text~~ in
+the middle.
+
+A Heading Two
+─────────────
+
+Nested styles: bold italic and ~~all three~~ together.
+
+A curly quote “quoted” and an em dash—here, plus café accent.
+
+A Unicode bullet • then a real · bullet byte.
+
+Code sample: printf("hi") back to prose.
+
+Heading Three by style
+
+Final paragraph.

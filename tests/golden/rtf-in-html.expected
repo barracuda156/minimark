@@ -1,0 +1,9 @@
+<h1><strong>A Heading One</strong></h1>
+<p>Ordinary paragraph text with a <strong>bold word</strong>, an <em>italic word</em>, and <del>struck text</del> in the middle.</p>
+<h2><strong>A Heading Two</strong></h2>
+<p>Nested styles: <strong><em>bold italic</em></strong> and <strong><em><del>all three</del></em></strong> together.</p>
+<p>A curly quote “quoted” and an em dash—here, plus café accent.</p>
+<p>A Unicode bullet •	then a real · bullet byte.</p>
+<p>Code sample: <code>printf(&quot;hi&quot;)</code> back to prose.</p>
+<h3><strong>Heading Three by style</strong></h3>
+<p>Final paragraph.</p>

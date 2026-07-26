@@ -36,6 +36,10 @@ frontmatter-ansi-ascii|frontmatter|-t term --glyphs=ascii --color=none --width=8
 frontmatter-html|frontmatter|-t html -s --glyphs=bmp
 frontmatter-latex|frontmatter|-t latex -s
 frontmatter-plain|frontmatter|-t plain --glyphs=bmp --width=80
+rtf-in-plain|rtfbasic|-f rtf -t plain --width=80
+rtf-in-html|rtfbasic|-f rtf -t html
+rtf-in-ansi-bmp|rtfbasic|-f rtf -t term --glyphs=bmp --color=none --width=80
+rtf-in-macroman-plain|rtfmac|-f rtf -t plain --width=80
 '
 
 # Map a short input key to its file, relative to the tests/ directory.
@@ -45,6 +49,8 @@ input_path() {
     extensions) echo 'inputs/extensions.md' ;;
     mathcolor)  echo 'inputs/mathcolor.md' ;;
     frontmatter) echo 'inputs/frontmatter.md' ;;
+    rtfbasic)   echo 'inputs/rtf-basic.rtf' ;;
+    rtfmac)     echo 'inputs/rtf-macroman.rtf' ;;
     *)          echo "unknown input key: $1" >&2; exit 1 ;;
   esac
 }
