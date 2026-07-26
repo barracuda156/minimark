@@ -36,3 +36,4 @@ data MExpr
   | MUnknown String                  -- unrecognized \command, kept verbatim
 
 data MStyle = SBb | SCal | SFrak | SBold | SItal | SRoman
+  deriving (Eq)
