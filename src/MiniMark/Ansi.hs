@@ -147,10 +147,23 @@ spanText = concatMap snd
 renderSpans :: AnsiOpts -> [Span] -> String
 renderSpans o = concatMap (\(st, t) -> emit o st t)
 
+-- Split an inline run at every hard LineBreak into segments (the breaks
+-- themselves dropped).  n breaks -> n+1 segments; a leading/trailing or
+-- doubled break yields an empty segment, which the Para renderer turns
+-- into a blank line.  Breaks nested inside Emph/Strong are left alone
+-- (rare; they render as a space via inlineSpans' LineBreak case).
+splitBreaks :: [Inline] -> [[Inline]]
+splitBreaks = foldr step [[]]
+  where
+    step LineBreak acc      = [] : acc
+    step x (seg:rest)       = (x:seg) : rest
+    step x []               = [[x]]     -- unreachable (seed is [[]])
+
 inlineSpans :: AnsiOpts -> Style -> [Inline] -> [Span]
 inlineSpans o st = concatMap f
   where
     f (Str t) = [(st, t)]
+    f LineBreak = [(st, " ")]   -- only reached inside a styled wrapper
     f (Emph is)
       | aoItalic o = inlineSpans o st{sItal = True} is
       | otherwise  = inlineSpans o st{sUnder = True} is
@@ -197,6 +210,7 @@ flatText :: [Inline] -> String
 flatText = concatMap f
   where
     f (Str t) = t
+    f LineBreak = " "
     f (Emph is) = flatText is
     f (Strong is) = flatText is
     f (Strike is) = flatText is
@@ -274,7 +288,15 @@ blockLines o depth b = case b of
          else [txt]
 
   Para is ->
-    map (renderSpans o) (wrapSpans (aoWidth o) (inlineSpans o plainS is))
+    -- A paragraph may carry hard line breaks (LineBreak, from the RTF
+    -- reader's \line / escaped-newline).  Each break splits the run into a
+    -- segment that wraps independently; consecutive breaks (blank source
+    -- lines) leave empty segments -> blank output lines.  A break-free
+    -- paragraph is one segment and reflows exactly as before.
+    concatMap (\seg -> case wrapSpans (aoWidth o) (inlineSpans o plainS seg) of
+                         [[]] -> [""]
+                         wls  -> map (renderSpans o) wls)
+              (splitBreaks is)
 
   CodeBlock lang lns ->
     let cw = maximum (1 : map strW lns)

@@ -128,6 +128,7 @@ inlines :: HtmlOpts -> [Inline] -> String
 inlines o = concatMap f
   where
     f (Str t) = esc t
+    f LineBreak = "<br>\n"
     f (Emph is) = "<em>" ++ inlines o is ++ "</em>"
     f (Strong is) = "<strong>" ++ inlines o is ++ "</strong>"
     f (Strike is) = "<del>" ++ inlines o is ++ "</del>"
@@ -149,6 +150,7 @@ flatText :: HtmlOpts -> [Inline] -> String
 flatText o = concatMap f
   where
     f (Str t) = t
+    f LineBreak = " "
     f (Emph is) = flatText o is
     f (Strong is) = flatText o is
     f (Strike is) = flatText o is

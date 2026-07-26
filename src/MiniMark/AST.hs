@@ -32,7 +32,8 @@ data Align = ALeft | ACenter | ARight
 data ListItem = ListItem (Maybe Bool) [Block]  -- Just True = checked
 
 data Inline
-  = Str String
+  = Str String                       -- always newline-free (breaks are LineBreak)
+  | LineBreak                        -- a hard, forced line break within a block
   | Emph [Inline]
   | Strong [Inline]
   | Strike [Inline]                  -- ~~x~~

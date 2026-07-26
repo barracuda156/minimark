@@ -1,0 +1,15 @@
+<p>Process:         X11.bin [56157]<br>
+Path:            /Applications/Utilities/X11.app<br>
+Identifier:      org.x.X11<br>
+<br>
+Interval Since Last Report:          2654790 sec<br>
+Crashes Since Last Report:           837<br>
+<br>
+Date/Time:       2026-03-30 08:32:17<br>
+Report Version:  6<br>
+<br>
+Exception Type:  EXC_BAD_ACCESS (SIGBUS)<br>
+Crashed Thread:  2<br>
+A <strong>bold</strong> word then a hard<br>
+break via \line control word.</p>
+<p>Second real paragraph after a \par.</p>

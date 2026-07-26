@@ -41,6 +41,11 @@ rtf-in-plain|rtfbasic|-f rtf -t plain --width=80
 rtf-in-html|rtfbasic|-f rtf -t html
 rtf-in-ansi-bmp|rtfbasic|-f rtf -t term --glyphs=bmp --color=none --width=80
 rtf-in-macroman-plain|rtfmac|-f rtf -t plain --width=80
+rtf-linebreaks-plain|rtfbreaks|-f rtf -t plain --width=80
+rtf-linebreaks-html|rtfbreaks|-f rtf -t html
+rtf-linebreaks-latex|rtfbreaks|-f rtf -t latex
+rtf-linebreaks-man|rtfbreaks|-f rtf -t man
+rtf-linebreaks-rtf|rtfbreaks|-f rtf -t rtf
 zip-list|zipmixed|--zip=list
 zip-stored|zipmixed|--zip=stored.txt
 zip-deflated|zipmixed|--zip=deflated.txt
@@ -58,6 +63,7 @@ input_path() {
     frontmatter) echo 'inputs/frontmatter.md' ;;
     rtfbasic)   echo 'inputs/rtf-basic.rtf' ;;
     rtfmac)     echo 'inputs/rtf-macroman.rtf' ;;
+    rtfbreaks)  echo 'inputs/rtf-linebreaks.rtf' ;;
     zipmixed)   echo 'inputs/zip-mixed.zip' ;;
     minidocx)   echo 'inputs/mini.docx' ;;
     hellogz)    echo 'inputs/hello.md.gz' ;;

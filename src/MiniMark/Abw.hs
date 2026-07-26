@@ -153,6 +153,7 @@ inlines = concatMap (inline [])
 inline :: [String] -> Inline -> String
 inline ps il = case il of
   Str t        -> emit ps (esc t)
+  LineBreak    -> "<br/>"
   Emph is      -> concatMap (inline (add "font-style:italic" ps)) is
   Strong is    -> concatMap (inline (add "font-weight:bold" ps)) is
   Strike is    -> concatMap (inline (add "text-decoration:line-through" ps)) is
@@ -196,6 +197,7 @@ flatText :: [Inline] -> String
 flatText = concatMap f
   where
     f (Str t) = t
+    f LineBreak = " "
     f (Emph is) = flatText is
     f (Strong is) = flatText is
     f (Strike is) = flatText is

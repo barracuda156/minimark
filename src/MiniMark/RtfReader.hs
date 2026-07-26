@@ -311,7 +311,7 @@ control s a txt fs w marg = case w of
   -- pushInline consumes the pending text but fs is paragraph-scoped)
   "par"      -> (s, endPara a txt fs, [], 0)
   "pard"     -> (s, a{curSty = Nothing}, txt, fs)  -- reset paragraph props
-  "line"     -> (s, pushInline a txt (Str "\n"), [], fs)
+  "line"     -> (s, pushInline a txt LineBreak, [], fs)
   "tab"      -> pushCold s a txt fs '\t'
   "sect"     -> (s, endPara a txt fs, [], 0)
   "page"     -> (s, endPara a txt fs, [], 0)
@@ -393,8 +393,8 @@ symbol s a txt fs c = case c of
   '_'  -> pushCold s a txt fs '\x2011'   -- non-breaking hyphen
   '-'  -> (s, a, txt, fs)                -- optional hyphen: drop
   '*'  -> (s{dest = DSkip}, a, txt, fs)  -- \*\dest -> ignore whole group
-  '\n' -> (s, pushInline a txt (Str "\n"), [], fs) -- escaped nl = line break
-  '\r' -> (s, pushInline a txt (Str "\n"), [], fs)
+  '\n' -> (s, pushInline a txt LineBreak, [], fs) -- escaped nl = line break
+  '\r' -> (s, pushInline a txt LineBreak, [], fs)
   _    -> (s, a, txt, fs)                -- other symbols: ignore
 
 -- Push one literal char into the pending run (the HOT path: once per
@@ -540,6 +540,7 @@ allBlank :: [Inline] -> Bool
 allBlank = all blankInline
   where
     blankInline (Str t)    = all (\c -> c == ' ' || c == '\t' || c == '\n') t
+    blankInline LineBreak  = True
     blankInline (Strong x) = allBlank x
     blankInline (Emph x)   = allBlank x
     blankInline (Strike x) = allBlank x
@@ -554,6 +555,7 @@ trimInlines = trimTrail . trimLead
     trimLead (Str t : rest) =
       let t' = dropWhile isWs t
       in if null t' then trimLead rest else Str t' : rest
+    trimLead (LineBreak : rest) = trimLead rest
     trimLead xs = xs
     -- reverse' (list reversed + each Str's chars flipped) is its own
     -- inverse, so trimming the "lead" of the doubly-reversed list and

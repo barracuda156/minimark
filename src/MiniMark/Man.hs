@@ -32,7 +32,7 @@ block b = case b of
     | n == 1    -> ".SH " ++ quoted (inlines is) ++ "\n"
     | n == 2    -> ".SS " ++ quoted (inlines is) ++ "\n"
     | otherwise -> ".PP\n\\fB" ++ inlines is ++ "\\fR\n"
-  Para is -> ".PP\n" ++ textLines (inlines is) ++ "\n"
+  Para is -> ".PP\n" ++ breakLines (inlines is) ++ "\n"
   CodeBlock _ lns ->
     ".\\\" groff 1.22+: .EX/.EE; falls back to .nf/.fi on older groff\n"
     ++ ".EX\n" ++ intercalate "\n" (map (textLines . escCode) lns) ++ "\n.EE\n"
@@ -81,10 +81,22 @@ table aligns hdr rows =
 -- escape per physical line.
 textLines :: String -> String
 textLines = intercalate "\n" . map leadEsc . splitLines
+
+splitLines :: String -> [String]
+splitLines s = case break (== '\n') s of
+  (l, [])     -> [l]
+  (l, _:rest) -> l : splitLines rest
+
+-- Paragraph text carrying hard LineBreaks (rendered as '\n' by inlines):
+-- each break becomes an explicit .br request so roff's fill mode does not
+-- reflow across it.  An empty segment (a blank source line between
+-- sections) becomes a .br on an otherwise empty output line, which roff
+-- renders as a blank line.  Break-free paragraphs collapse to textLines.
+breakLines :: String -> String
+breakLines s = intercalate "\n" (interBr (map leadEsc (splitLines s)))
   where
-    splitLines s = case break (== '\n') s of
-      (l, [])     -> [l]
-      (l, _:rest) -> l : splitLines rest
+    interBr []     = []
+    interBr (l:ls) = l : concatMap (\x -> [".br", x]) ls
 
 -- Rule 2: a line that would start with '.' or '\'' gets \& prefixed
 -- (the zero-width character escape) so roff doesn't read it as a macro.
@@ -99,6 +111,7 @@ inlines :: [Inline] -> String
 inlines = concatMap f
   where
     f (Str t) = esc t
+    f LineBreak = "\n"   -- physical newline; breakLines turns it into .br
     f (Emph is) = "\\fI" ++ inlines is ++ "\\fR"
     f (Strong is) = "\\fB" ++ inlines is ++ "\\fR"
     f (Strike is) = inlines is
@@ -111,6 +124,7 @@ flatText :: [Inline] -> String
 flatText = concatMap f
   where
     f (Str t) = t
+    f LineBreak = " "
     f (Emph is) = flatText is
     f (Strong is) = flatText is
     f (Strike is) = flatText is

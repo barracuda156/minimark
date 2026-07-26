@@ -1,0 +1,17 @@
+Process:         X11.bin [56157]\\
+Path:            /Applications/Utilities/X11.app\\
+Identifier:      org.x.X11\\
+\\
+Interval Since Last Report:          2654790 sec\\
+Crashes Since Last Report:           837\\
+\\
+Date/Time:       2026-03-30 08:32:17\\
+Report Version:  6\\
+\\
+Exception Type:  EXC\_BAD\_ACCESS (SIGBUS)\\
+Crashed Thread:  2\\
+A \textbf{bold} word then a hard\\
+break via \textbackslash{}line control word.
+
+Second real paragraph after a \textbackslash{}par.
+

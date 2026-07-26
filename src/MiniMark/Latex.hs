@@ -105,6 +105,7 @@ inlines :: [Inline] -> String
 inlines = concatMap f
   where
     f (Str t) = escT t
+    f LineBreak = "\\\\\n"
     f (Emph is) = "\\emph{" ++ inlines is ++ "}"
     f (Strong is) = "\\textbf{" ++ inlines is ++ "}"
     f (Strike is) = inlines is
@@ -119,6 +120,7 @@ flatText :: [Inline] -> String
 flatText = concatMap f
   where
     f (Str t) = t
+    f LineBreak = " "
     f (Emph is) = flatText is
     f (Strong is) = flatText is
     f (Strike is) = flatText is

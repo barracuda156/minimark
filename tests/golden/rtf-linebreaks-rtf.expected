@@ -1,0 +1,20 @@
+{\rtf1\ansi\ansicpg1252\deff0\viewkind4
+{\fonttbl{\f0\fswiss Helvetica;}{\f1\fmodern Courier;}}
+{\colortbl;\red95\green175\blue255;\red0\green190\blue190;\red95\green195\blue95;\red215\green175\blue0;\red200\green120\blue245;\red150\green150\blue150;\red220\green95\blue95;\red0\green0\blue0;\red235\green235\blue235;}
+\uc1\f0\fs24
+Process:         X11.bin [56157]\line
+Path:            /Applications/Utilities/X11.app\line
+Identifier:      org.x.X11\line
+\line
+Interval Since Last Report:          2654790 sec\line
+Crashes Since Last Report:           837\line
+\line
+Date/Time:       2026-03-30 08:32:17\line
+Report Version:  6\line
+\line
+Exception Type:  EXC_BAD_ACCESS (SIGBUS)\line
+Crashed Thread:  2\line
+A \b bold\b0  word then a hard\line
+break via \\line control word.\par
+Second real paragraph after a \\par.\par
+}
