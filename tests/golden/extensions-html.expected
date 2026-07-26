@@ -44,5 +44,17 @@ hr { border: none; border-top: 1px solid #bbb; }
 <p>This is <del>deleted text</del> inside a sentence.</p>
 <p><del>Whole line struck through.</del></p>
 <p>Mixed <strong>bold and <del>struck</del> together</strong>.</p>
+<h2>Reference links, titles, images (T1.2)</h2>
+<p>Inline link with title: <a href="https://www.anthropic.com" title="Anthropic home">Anthropic</a>.</p>
+<p>Reference link: <a href="https://example.com/docs" title="Example Docs">the docs</a> explain more.</p>
+<p>Collapsed reference: <a href="https://example.com/docs-ref">Docs Ref</a> also works.</p>
+<p>Shortcut reference: <a href="https://example.com/docs-ref">Docs Ref</a> resolves the same way.</p>
+<p>Undefined reference stays literal: [nowhere][missing-ref].</p>
+<p>Undefined shortcut stays literal: [Also Missing].</p>
+<p>Image with title: <img src="https://example.com/logo.png" alt="a small logo" title="Logo title"></p>
+<p>Reference image: <img src="https://example.com/image.png" alt="alt text" title="An image"></p>
+<p>Paren url survives inline: <a href="https://en.wikipedia.org/wiki/Haskell_(programming_language)">Haskell</a> stays whole.</p>
+<p>Paren url by reference: <a href="https://en.wikipedia.org/wiki/Haskell_(programming_language)">the Haskell article</a>.</p>
+<p>Paren-form title: <a href="https://example.com/pt" title="Paren Title">point here</a> uses (title) syntax.</p>
 </body>
 </html>

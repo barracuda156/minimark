@@ -36,4 +36,28 @@ Whole line struck through.
 
 Mixed \textbf{bold and struck together}.
 
+\subsection{Reference links, titles, images (T1.2)}
+
+Inline link with title: \href{https://www.anthropic.com}{Anthropic}.
+
+Reference link: \href{https://example.com/docs}{the docs} explain more.
+
+Collapsed reference: \href{https://example.com/docs-ref}{Docs Ref} also works.
+
+Shortcut reference: \href{https://example.com/docs-ref}{Docs Ref} resolves the same way.
+
+Undefined reference stays literal: [nowhere][missing-ref].
+
+Undefined shortcut stays literal: [Also Missing].
+
+Image with title: [image: a small logo] \url{https://example.com/logo.png}
+
+Reference image: [image: alt text] \url{https://example.com/image.png}
+
+Paren url survives inline: \href{https://en.wikipedia.org/wiki/Haskell_(programming_language)}{Haskell} stays whole.
+
+Paren url by reference: \href{https://en.wikipedia.org/wiki/Haskell_(programming_language)}{the Haskell article}.
+
+Paren-form title: \href{https://example.com/pt}{point here} uses (title) syntax.
+
 \end{document}

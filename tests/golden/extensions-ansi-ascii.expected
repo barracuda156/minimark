@@ -27,3 +27,31 @@ This is ~~deleted text~~ inside a sentence.
 ~~Whole line struck through.~~
 
 Mixed bold and ~~struck~~ together.
+
+Reference links, titles, images (T1.2)
+──────────────────────────────────────
+
+Inline link with title: Anthropic (https://www.anthropic.com).
+
+Reference link: the docs (https://example.com/docs) explain more.
+
+Collapsed reference: Docs Ref (https://example.com/docs-ref) also works.
+
+Shortcut reference: Docs Ref (https://example.com/docs-ref) resolves the same
+way.
+
+Undefined reference stays literal: [nowhere][missing-ref].
+
+Undefined shortcut stays literal: [Also Missing].
+
+Image with title: [image: a small logo] (https://example.com/logo.png)
+
+Reference image: [image: alt text] (https://example.com/image.png)
+
+Paren url survives inline: Haskell
+(https://en.wikipedia.org/wiki/Haskell_(programming_language)) stays whole.
+
+Paren url by reference: the Haskell article
+(https://en.wikipedia.org/wiki/Haskell_(programming_language)).
+
+Paren-form title: point here (https://example.com/pt) uses (title) syntax.

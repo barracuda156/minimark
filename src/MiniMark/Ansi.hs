@@ -134,11 +134,14 @@ inlineSpans o st = concatMap f
       | aoItalic o = inlineSpans o st{sStrike = True} is
       | otherwise  = inlineSpans o st{sDim = True} is
     f (CodeSpan t) = [(st{sFg = Just CCyan}, t)]
-    f (Link txt url)
+    f (Link txt url _)
       | flatText txt == url = [(linkS, url)]
       | otherwise = inlineSpans o linkS txt
                     ++ [(st{sDim = True}, " (" ++ url ++ ")")]
       where linkS = st{sUnder = True, sFg = Just CBlue}
+    f (Image alt url _) =
+      [(st{sDim = True}, "[image: " ++ flatText alt ++ "]")]
+      ++ [(st{sDim = True}, " (" ++ url ++ ")")]
     f (MathI raw es) = [(st, mathText o raw es)]
 
 mathText :: AnsiOpts -> String -> [MExpr] -> String
@@ -154,7 +157,8 @@ flatText = concatMap f
     f (Strong is) = flatText is
     f (Strike is) = flatText is
     f (CodeSpan t) = t
-    f (Link t _) = flatText t
+    f (Link t _ _) = flatText t
+    f (Image t _ _) = flatText t
     f (MathI raw _) = raw
 
 --------------------------------------------------------------------------

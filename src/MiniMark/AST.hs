@@ -37,7 +37,8 @@ data Inline
   | Strong [Inline]
   | Strike [Inline]                  -- ~~x~~
   | CodeSpan String
-  | Link [Inline] String             -- text, url
+  | Link [Inline] String String      -- text, url, title ("" = none)
+  | Image [Inline] String String     -- alt, url, title ("" = none)
   | MathI String [MExpr]             -- raw TeX (lossless), parsed form
 
 -- TeX-math subset. Raw source is kept alongside in MathI/DisplayMath,

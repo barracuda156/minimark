@@ -95,6 +95,20 @@ inlines = concatMap f
     f (Strong is) = "\\textbf{" ++ inlines is ++ "}"
     f (Strike is) = inlines is
     f (CodeSpan t) = "\\texttt{" ++ escT t ++ "}"
-    f (Link txt url) =
+    f (Link txt url _) =
       "\\href{" ++ url ++ "}{" ++ inlines txt ++ "}"
+    f (Image alt url _) =
+      "[image: " ++ escT (flatText alt) ++ "] \\url{" ++ url ++ "}"
     f (MathI raw _) = "$" ++ raw ++ "$"
+
+flatText :: [Inline] -> String
+flatText = concatMap f
+  where
+    f (Str t) = t
+    f (Emph is) = flatText is
+    f (Strong is) = flatText is
+    f (Strike is) = flatText is
+    f (CodeSpan t) = t
+    f (Link t _ _) = flatText t
+    f (Image t _ _) = flatText t
+    f (MathI raw _) = raw

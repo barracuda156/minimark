@@ -114,10 +114,30 @@ inlines o = concatMap f
     f (Strong is) = "<strong>" ++ inlines o is ++ "</strong>"
     f (Strike is) = "<del>" ++ inlines o is ++ "</del>"
     f (CodeSpan t) = "<code>" ++ esc t ++ "</code>"
-    f (Link txt url) =
-      "<a href=\"" ++ esc url ++ "\">" ++ inlines o txt ++ "</a>"
+    f (Link txt url title) =
+      "<a href=\"" ++ esc url ++ "\"" ++ titleAttr title ++ ">"
+      ++ inlines o txt ++ "</a>"
+    f (Image alt url title) =
+      "<img src=\"" ++ esc url ++ "\" alt=\"" ++ esc (flatText o alt) ++ "\""
+      ++ titleAttr title ++ ">"
     f (MathI raw es) =
       "<span class=\"math\">" ++ esc (mathText o raw es) ++ "</span>"
+
+titleAttr :: String -> String
+titleAttr "" = ""
+titleAttr t  = " title=\"" ++ esc t ++ "\""
+
+flatText :: HtmlOpts -> [Inline] -> String
+flatText o = concatMap f
+  where
+    f (Str t) = t
+    f (Emph is) = flatText o is
+    f (Strong is) = flatText o is
+    f (Strike is) = flatText o is
+    f (CodeSpan t) = t
+    f (Link t _ _) = flatText o t
+    f (Image t _ _) = flatText o t
+    f (MathI raw _) = raw
 
 mathText :: HtmlOpts -> String -> [MExpr] -> String
 mathText o raw es
