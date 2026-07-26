@@ -35,6 +35,7 @@ data Inline
   = Str String
   | Emph [Inline]
   | Strong [Inline]
+  | Strike [Inline]                  -- ~~x~~
   | CodeSpan String
   | Link [Inline] String             -- text, url
   | MathI String [MExpr]             -- raw TeX (lossless), parsed form

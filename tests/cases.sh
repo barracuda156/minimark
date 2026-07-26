@@ -15,12 +15,19 @@ math-ansi-ascii|math|-t term --glyphs=ascii --color=none --width=80
 math-html|math|-t html -s --glyphs=bmp
 math-latex|math|-t latex -s
 math-plain|math|-t plain --glyphs=bmp --width=80
+extensions-ansi-bmp|extensions|-t term --glyphs=bmp --color=none --width=80
+extensions-ansi-full|extensions|-t term --glyphs=full --color=none --width=80
+extensions-ansi-ascii|extensions|-t term --glyphs=ascii --color=none --width=80
+extensions-html|extensions|-t html -s --glyphs=bmp
+extensions-latex|extensions|-t latex -s
+extensions-plain|extensions|-t plain --glyphs=bmp --width=80
 '
 
 # Map a short input key to its file, relative to the tests/ directory.
 input_path() {
   case "$1" in
-    math)     echo '../../minimark_rendering/math-sample.md' ;;
-    *)        echo "unknown input key: $1" >&2; exit 1 ;;
+    math)       echo '../../minimark_rendering/math-sample.md' ;;
+    extensions) echo 'inputs/extensions.md' ;;
+    *)          echo "unknown input key: $1" >&2; exit 1 ;;
   esac
 }

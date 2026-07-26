@@ -1,0 +1,26 @@
+# Extensions
+
+Corpus for Phase 1 markdown constructs added after the initial pipeline.
+Accumulates across tasks — add new sections, don't replace old ones.
+
+## Task lists (T1.1)
+
+- [ ] unchecked item
+- [x] checked item (lowercase x)
+- [X] checked item (uppercase X)
+- plain bullet item, no checkbox
+
+1. [ ] first ordered task
+2. [x] second ordered task, done
+3. plain ordered item
+
+- [x] checked item with continuation
+      second line of the same item, indented under the checkbox
+
+## Strikethrough (T1.1)
+
+This is ~~deleted text~~ inside a sentence.
+
+~~Whole line struck through.~~
+
+Mixed **bold and ~~struck~~ together**.

@@ -27,15 +27,15 @@ data Color = CBlue | CCyan | CGreen | CYellow | CMagenta | CGray
   deriving (Eq)
 
 data Style = Style
-  { sBold, sItal, sUnder, sDim :: Bool
+  { sBold, sItal, sUnder, sDim, sStrike :: Bool
   , sFg :: Maybe Color
   }
 
 plainS :: Style
-plainS = Style False False False False Nothing
+plainS = Style False False False False False Nothing
 
 isPlain :: Style -> Bool
-isPlain (Style b i u d f) = not b && not i && not u && not d
+isPlain (Style b i u d k f) = not b && not i && not u && not d && not k
                             && (case f of Nothing -> True; _ -> False)
 
 col16 :: Color -> Int
@@ -64,6 +64,7 @@ sgr o st
       , ["2" | sDim st]
       , ["3" | sItal st]
       , ["4" | sUnder st]
+      , ["9" | sStrike st]
       , fg (sFg st)
       ]
     fg Nothing = []
@@ -128,6 +129,10 @@ inlineSpans o st = concatMap f
       | aoItalic o = inlineSpans o st{sItal = True} is
       | otherwise  = inlineSpans o st{sUnder = True} is
     f (Strong is) = inlineSpans o st{sBold = True} is
+    f (Strike is)
+      | aoColor o == MNone = [(st, "~~")] ++ inlineSpans o st is ++ [(st, "~~")]
+      | aoItalic o = inlineSpans o st{sStrike = True} is
+      | otherwise  = inlineSpans o st{sDim = True} is
     f (CodeSpan t) = [(st{sFg = Just CCyan}, t)]
     f (Link txt url)
       | flatText txt == url = [(linkS, url)]
@@ -147,6 +152,7 @@ flatText = concatMap f
     f (Str t) = t
     f (Emph is) = flatText is
     f (Strong is) = flatText is
+    f (Strike is) = flatText is
     f (CodeSpan t) = t
     f (Link t _) = flatText t
     f (MathI raw _) = raw
@@ -230,15 +236,16 @@ blockLines o depth b = case b of
   BulletList items ->
     let bullet = [bulletChar depth]
         o' = o{aoWidth = aoWidth o - 2}
-    in concatMap (item o' (emit o plainS{sFg = Just CYellow} bullet ++ " ") 2 depth) items
+        lbl it = emit o plainS{sFg = Just CYellow} bullet ++ " " ++ checkPfx o it
+    in concatMap (\it -> item o' (lbl it) (2 + checkW o it) depth it) items
 
   OrderedList start items ->
     let nums = map show [start .. start + length items - 1]
         nw = maximum (map length nums)
         o' = o{aoWidth = aoWidth o - (nw + 2)}
-        mk n = let lbl = replicate (nw - length n) ' ' ++ n ++ "."
-               in emit o plainS{sFg = Just CYellow} lbl ++ " "
-    in concat (zipWith (\n it -> item o' (mk n) (nw + 2) depth it) nums items)
+        mk n it = let lbl = replicate (nw - length n) ' ' ++ n ++ "."
+                  in emit o plainS{sFg = Just CYellow} lbl ++ " " ++ checkPfx o it
+    in concat (zipWith (\n it -> item o' (mk n it) (nw + 2 + checkW o it) depth it) nums items)
 
   HRule ->
     [emit o plainS{sDim = True} (replicate (aoWidth o) '\x2500')]
@@ -257,6 +264,23 @@ item o lbl ind depth (ListItem _ bs) =
   case concatMap (blockLines o (depth + 1)) bs of
     []     -> [lbl]
     (l:ls) -> (lbl ++ l) : indentLines ind ls
+
+-- Checkbox prefix for a list item (task lists, T1.1): "" when no
+-- checkbox. ☐/☑ (Unicode 1.1, safe at every glyph tier) unless
+-- --glyphs=ascii, which falls back to [ ]/[x].
+checkPfx :: AnsiOpts -> ListItem -> String
+checkPfx o (ListItem mb _) = case mb of
+  Nothing -> ""
+  Just checked
+    | aoAscii o -> (if checked then "[x]" else "[ ]") ++ " "
+    | otherwise -> emit o plainS{sFg = Just CYellow}
+                     [if checked then '\x2611' else '\x2610'] ++ " "
+
+checkW :: AnsiOpts -> ListItem -> Int
+checkW o (ListItem mb _) = case mb of
+  Nothing -> 0
+  Just _ | aoAscii o -> 4
+         | otherwise -> 2
 
 bulletChar :: Int -> Char
 bulletChar d = case d `mod` 3 of

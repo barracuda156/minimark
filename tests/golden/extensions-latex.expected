@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\begin{document}
+
+\section{Extensions}
+
+Corpus for Phase 1 markdown constructs added after the initial pipeline. Accumulates across tasks — add new sections, don't replace old ones.
+
+\subsection{Task lists (T1.1)}
+
+\begin{itemize}
+\item $\square$ unchecked item
+\item $\boxtimes$ checked item (lowercase x)
+\item $\boxtimes$ checked item (uppercase X)
+\item plain bullet item, no checkbox
+\end{itemize}
+
+\begin{enumerate}
+\item $\square$ first ordered task
+\item $\boxtimes$ second ordered task, done
+\item plain ordered item
+\end{enumerate}
+
+\begin{itemize}
+\item $\boxtimes$ checked item with continuation second line of the same item, indented under the checkbox
+\end{itemize}
+
+\subsection{Strikethrough (T1.1)}
+
+This is deleted text inside a sentence.
+
+Whole line struck through.
+
+Mixed \textbf{bold and struck together}.
+
+\end{document}

@@ -80,7 +80,12 @@ block b = case b of
   DisplayMath raw _ -> "\\[ " ++ raw ++ " \\]\n"
 
 item :: ListItem -> String
-item (ListItem _ bs) = "\\item " ++ intercalate "\n" (map block bs)
+item (ListItem mb bs) = "\\item " ++ checkPfx ++ intercalate "\n" (map block bs)
+  where
+    checkPfx = case mb of
+      Nothing -> ""
+      Just True  -> "$\\boxtimes$ "
+      Just False -> "$\\square$ "
 
 inlines :: [Inline] -> String
 inlines = concatMap f
@@ -88,6 +93,7 @@ inlines = concatMap f
     f (Str t) = escT t
     f (Emph is) = "\\emph{" ++ inlines is ++ "}"
     f (Strong is) = "\\textbf{" ++ inlines is ++ "}"
+    f (Strike is) = inlines is
     f (CodeSpan t) = "\\texttt{" ++ escT t ++ "}"
     f (Link txt url) =
       "\\href{" ++ url ++ "}{" ++ inlines txt ++ "}"

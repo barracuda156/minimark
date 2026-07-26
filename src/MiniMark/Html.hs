@@ -78,8 +78,12 @@ block o b = case b of
     "<div class=\"math display\">" ++ esc (mathText o raw es) ++ "</div>\n"
 
 li :: HtmlOpts -> ListItem -> String
-li o (ListItem _ bs) = "<li>" ++ tight ++ "</li>\n"
+li o (ListItem mb bs) = "<li>" ++ checkPfx ++ tight ++ "</li>\n"
   where
+    checkPfx = case mb of
+      Nothing -> ""
+      Just checked -> "<input type=\"checkbox\" disabled"
+                      ++ (if checked then " checked" else "") ++ "> "
     -- single-paragraph items render without <p> wrapper
     tight = case bs of
       [Para is] -> inlines o is
@@ -108,6 +112,7 @@ inlines o = concatMap f
     f (Str t) = esc t
     f (Emph is) = "<em>" ++ inlines o is ++ "</em>"
     f (Strong is) = "<strong>" ++ inlines o is ++ "</strong>"
+    f (Strike is) = "<del>" ++ inlines o is ++ "</del>"
     f (CodeSpan t) = "<code>" ++ esc t ++ "</code>"
     f (Link txt url) =
       "<a href=\"" ++ esc url ++ "\">" ++ inlines o txt ++ "</a>"

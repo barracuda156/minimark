@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>inputs/extensions.md</title>
+<style>
+body { font-family: Georgia, serif; max-width: 42em;
+       margin: 2em auto; padding: 0 1em; line-height: 1.5; }
+code { font-family: Menlo, Monaco, monospace; font-size: 0.92em;
+       background: #f2f2f2; padding: 0 0.15em; }
+pre { background: #f6f6f6; border: 1px solid #ddd; padding: 0.8em;
+      overflow-x: auto; }
+pre code { background: none; padding: 0; }
+blockquote { border-left: 3px solid #9c9; margin-left: 0;
+             padding-left: 1em; color: #444; }
+table { border-collapse: collapse; }
+th, td { border: 1px solid #bbb; padding: 0.25em 0.6em; }
+th { background: #eee; }
+.math { white-space: nowrap; }
+.math.display { display: block; text-align: center; margin: 1em 0;
+                white-space: normal; }
+hr { border: none; border-top: 1px solid #bbb; }
+</style>
+</head>
+<body>
+<h1>Extensions</h1>
+<p>Corpus for Phase 1 markdown constructs added after the initial pipeline. Accumulates across tasks — add new sections, don't replace old ones.</p>
+<h2>Task lists (T1.1)</h2>
+<ul>
+<li><input type="checkbox" disabled> unchecked item</li>
+<li><input type="checkbox" disabled checked> checked item (lowercase x)</li>
+<li><input type="checkbox" disabled checked> checked item (uppercase X)</li>
+<li>plain bullet item, no checkbox</li>
+</ul>
+<ol>
+<li><input type="checkbox" disabled> first ordered task</li>
+<li><input type="checkbox" disabled checked> second ordered task, done</li>
+<li>plain ordered item</li>
+</ol>
+<ul>
+<li><input type="checkbox" disabled checked> checked item with continuation second line of the same item, indented under the checkbox</li>
+</ul>
+<h2>Strikethrough (T1.1)</h2>
+<p>This is <del>deleted text</del> inside a sentence.</p>
+<p><del>Whole line struck through.</del></p>
+<p>Mixed <strong>bold and <del>struck</del> together</strong>.</p>
+</body>
+</html>

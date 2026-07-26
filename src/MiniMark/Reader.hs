@@ -158,20 +158,33 @@ listBlock ls@(l:_) =
     Nothing -> paraBlock ls
     Just (ord, start, _) ->
       let (items, rest) = collectItems ord ls
-          blocks = map (ListItem Nothing . parseBlocks) items
+          mkItem (checked, lns) = ListItem checked (parseBlocks lns)
+          blocks = map mkItem items
       in (if ord then OrderedList start blocks else BulletList blocks)
          : parseBlocks rest
 listBlock [] = []
 
--- Split consecutive lines into items of a list of the given family.
-collectItems :: Bool -> [String] -> ([[String]], [String])
+-- `[ ] `/`[x] `/`[X] ` at the start of an item's first line -> checkbox.
+checkbox :: String -> Maybe (Bool, String)
+checkbox l = case l of
+  '[':' ':']':' ':r -> Just (False, r)
+  '[':c:']':' ':r | c `elem` "xX" -> Just (True, r)
+  _ -> Nothing
+
+-- Split consecutive lines into items of a list of the given family,
+-- each tagged with its checkbox state (marker width grows by 4 when
+-- a checkbox is present, so continuation lines indent past it).
+collectItems :: Bool -> [String] -> ([(Maybe Bool, [String])], [String])
 collectItems ord (l:ls) =
   case listMarker l of
-    Just (o, _, w) | o == ord ->
-      let content = drop w l
+    Just (o, _, w0) | o == ord ->
+      let raw = drop w0 l
+          (checked, content, w) = case checkbox raw of
+            Just (c, r) -> (Just c, r, w0 + 4)
+            Nothing     -> (Nothing, raw, w0)
           (cont, rest) = itemCont w ls
           (moreItems, rest') = collectItems ord rest
-      in ((content : cont) : moreItems, rest')
+      in ((checked, content : cont) : moreItems, rest')
     _ -> ([], l:ls)
 collectItems _ [] = ([], [])
 
@@ -261,13 +274,14 @@ parseInlines = inl ' '
 inl :: Char -> String -> [Inline]
 inl _ [] = []
 inl prev s = case s of
-  '\\':c:r | c `elem` "\\`*_{}[]()#+-.!|$<>" -> prepend c (inl c r)
+  '\\':c:r | c `elem` "\\`*_{}[]()#+-.!|$<>~" -> prepend c (inl c r)
   '`':_ -> codeSpan prev s
   '$':r -> mathSpan prev r s
   '*':'*':r -> delim prev "**" Strong r s
   '*':r     -> delim prev "*"  Emph   r s
   '_':'_':r | not (isAlnumA prev) -> delim prev "__" Strong r s
   '_':r     | not (isAlnumA prev) -> delim prev "_"  Emph   r s
+  '~':'~':r -> delim prev "~~" Strike r s
   '!':'[':r -> linkSpan prev r s     -- images rendered as links
   '[':r -> linkSpan prev r s
   '<':r | httpish r -> autoAngle r s
@@ -349,6 +363,9 @@ findClose d = go ""
             Nothing -> go ('*':'*':acc) r
       | otherwise = go ('*':'*':acc) r
       where _ = t
+    go acc ('~':'~':r)
+      | d == "~~" = Just (reverse acc, r)
+      | otherwise = go ('~':'~':acc) r
     go acc (c:t)
       | [c] == d = Just (reverse acc, t)
       | c == head d && [c] == "_" && d == "__" =
