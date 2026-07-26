@@ -11,7 +11,7 @@ import System.IO
 import MiniMark.AST
 import MiniMark.Readers(parseFormat, readDocFile, readDocStdin)
 import MiniMark.MathRender(GlyphLevel(..))
-import MiniMark.Ansi(ColorMode(..), AnsiOpts(..), renderAnsi)
+import MiniMark.Ansi(ColorMode(..), LinkMode(..), AnsiOpts(..), renderAnsi)
 import MiniMark.Html(HtmlOpts(..), renderHtml)
 import MiniMark.Latex(LatexOpts(..), renderLatex)
 
@@ -38,6 +38,8 @@ usage = unlines
   , "  --ascii          shorthand for --glyphs=ascii"
   , "  --width=N        wrap width (default: $COLUMNS or 80)"
   , "  --italics=B      on | off (default: on for --color=true, else off)"
+  , "  --links=MODE     osc8 | off (default: off) — term only; osc8 emits"
+  , "                   clickable OSC 8 hyperlinks instead of \"text (url)\""
   , "  --title=T        document title (html -s)"
   , "  -h, --help       this text"
   , "  --version        version"
@@ -53,11 +55,12 @@ data Opts = Opts
   , oItalics    :: Maybe Bool
   , oStandalone :: Bool
   , oTitle      :: String
+  , oLinks      :: String
   , oFiles      :: [String]
   }
 
 defOpts :: Opts
-defOpts = Opts "term" Nothing Nothing "auto" "bmp" Nothing Nothing False "" []
+defOpts = Opts "term" Nothing Nothing "auto" "bmp" Nothing Nothing False "" "off" []
 
 main :: IO ()
 main = do
@@ -122,6 +125,7 @@ parseArgs o (a:as) = case a of
     | Just v <- eqOpt "--width" a   -> parseArgs o{oWidth = Just (readInt v)} as
     | Just v <- eqOpt "--title" a   -> parseArgs o{oTitle = v} as
     | Just v <- eqOpt "--italics" a -> parseArgs o{oItalics = Just (v == "on")} as
+    | Just v <- eqOpt "--links" a   -> parseArgs o{oLinks = v} as
     | Just v <- eqOpt "-t" a        -> parseArgs o{oFmt = v} as
     | Just v <- eqOpt "-f" a        -> parseArgs o{oFrom = Just v} as
     | Just v <- eqOpt "--from" a    -> parseArgs o{oFrom = Just v} as
@@ -150,10 +154,10 @@ render o doc = case oFmt o of
         let ital = case oItalics o of
                      Just b  -> b
                      Nothing -> cm == MTrue
-        return (renderAnsi (AnsiOpts cm (glyphs o) w ital (ascii o)) doc)
+        return (renderAnsi (AnsiOpts cm (glyphs o) w ital (ascii o) (linkMode o)) doc)
     | f == "plain" -> do
         w <- widthOf (oWidth o)
-        return (renderAnsi (AnsiOpts MNone (glyphs o) w False (ascii o)) doc)
+        return (renderAnsi (AnsiOpts MNone (glyphs o) w False (ascii o) LinksOff) doc)
     | f == "html" ->
         return (renderHtml (HtmlOpts (oStandalone o) (glyphs o) (ascii o)
                                      (titleOf o doc)) doc)
@@ -173,6 +177,9 @@ ascii o = oGlyphs o == "ascii"
 
 glyphs :: Opts -> GlyphLevel
 glyphs o = if oGlyphs o == "full" then GFull else GBmp
+
+linkMode :: Opts -> LinkMode
+linkMode o = if oLinks o == "osc8" then LinksOsc8 else LinksOff
 
 colorMode :: String -> IO ColorMode
 colorMode s = case s of

@@ -21,6 +21,7 @@ extensions-ansi-ascii|extensions|-t term --glyphs=ascii --color=none --width=80
 extensions-html|extensions|-t html -s --glyphs=bmp
 extensions-latex|extensions|-t latex -s
 extensions-plain|extensions|-t plain --glyphs=bmp --width=80
+extensions-ansi-osc8|extensions|-t term --glyphs=bmp --color=none --width=80 --links=osc8
 mathcolor-ansi-16|mathcolor|-t term --glyphs=bmp --color=16 --width=80
 mathcolor-ansi-true|mathcolor|-t term --glyphs=bmp --color=true --width=80
 mathcolor-ansi-none|mathcolor|-t term --glyphs=bmp --color=none --width=80
@@ -40,6 +41,7 @@ input_path() {
   case "$1" in
     math)       echo '../../minimark_rendering/math-sample.md' ;;
     extensions) echo 'inputs/extensions.md' ;;
+    mathcolor)  echo 'inputs/mathcolor.md' ;;
     frontmatter) echo 'inputs/frontmatter.md' ;;
     *)          echo "unknown input key: $1" >&2; exit 1 ;;
   esac

@@ -2,7 +2,7 @@
 -- Color modes: MNone (no escapes, doubles as the plain writer),
 -- M16 (classic SGR 30-37, safe in Terminal.app on 10.5/10.6),
 -- MTrue (24-bit SGR 38;2, for contour / mlterm on ppc).
-module MiniMark.Ansi(ColorMode(..), AnsiOpts(..), renderAnsi) where
+module MiniMark.Ansi(ColorMode(..), LinkMode(..), AnsiOpts(..), renderAnsi) where
 
 import MiniMark.CharClass(isSp)
 import Data.List(intercalate)
@@ -12,12 +12,18 @@ import MiniMark.MathRender
 data ColorMode = MNone | M16 | MTrue
   deriving (Eq)
 
+-- OSC 8 hyperlinks (T2.3): Off is byte-identical to pre-T2.3 output;
+-- Osc8 wraps link text and suppresses the dim "(url)" suffix.
+data LinkMode = LinksOff | LinksOsc8
+  deriving (Eq)
+
 data AnsiOpts = AnsiOpts
   { aoColor  :: ColorMode
   , aoGlyphs :: GlyphLevel
   , aoWidth  :: Int
   , aoItalic :: Bool        -- SGR 3 for emphasis (else underline)
   , aoAscii  :: Bool        -- math as raw TeX
+  , aoLinks  :: LinkMode
   }
 
 --------------------------------------------------------------------------
@@ -30,14 +36,16 @@ data Color = CBlue | CCyan | CGreen | CYellow | CMagenta | CGray
 data Style = Style
   { sBold, sItal, sUnder, sDim, sStrike :: Bool
   , sFg :: Maybe Color
+  , sLink :: Maybe String   -- OSC 8 target URL (T2.3)
   }
 
 plainS :: Style
-plainS = Style False False False False False Nothing
+plainS = Style False False False False False Nothing Nothing
 
 isPlain :: Style -> Bool
-isPlain (Style b i u d k f) = not b && not i && not u && not d && not k
-                            && (case f of Nothing -> True; _ -> False)
+isPlain (Style b i u d k f l) = not b && not i && not u && not d && not k
+                              && (case f of Nothing -> True; _ -> False)
+                              && (case l of Nothing -> True; _ -> False)
 
 col16 :: Color -> Int
 col16 CBlue = 34
@@ -83,7 +91,18 @@ sgr o st
 emit :: AnsiOpts -> Style -> String -> String
 emit o st t =
   let open = sgr o st
-  in if null open then t else open ++ t ++ "\ESC[0m"
+      styled = if null open then t else open ++ t ++ "\ESC[0m"
+  in case sLink st of
+       Just url -> osc8Open url ++ styled ++ osc8Close
+       Nothing  -> styled
+
+-- OSC 8 ; ; URL ST ... OSC 8 ; ; ST — ST (String Terminator, ESC \), not
+-- BEL: BEL-terminated OSC 8 confuses some terminals' other OSC handlers.
+osc8Open :: String -> String
+osc8Open url = "\ESC]8;;" ++ url ++ "\ESC\\"
+
+osc8Close :: String
+osc8Close = "\ESC]8;;\ESC\\"
 
 --------------------------------------------------------------------------
 -- Character display width (approximate wcwidth)
@@ -142,6 +161,7 @@ inlineSpans o st = concatMap f
       | otherwise  = inlineSpans o st{sDim = True} is
     f (CodeSpan t) = [(st{sFg = Just CCyan}, t)]
     f (Link txt url _)
+      | aoLinks o == LinksOsc8 = inlineSpans o linkS{sLink = Just url} txt
       | flatText txt == url = [(linkS, url)]
       | otherwise = inlineSpans o linkS txt
                     ++ [(st{sDim = True}, " (" ++ url ++ ")")]

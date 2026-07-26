@@ -1,0 +1,63 @@
+Extensions
+══════════
+
+Corpus for Phase 1 markdown constructs added after the initial pipeline.
+Accumulates across tasks — add new sections, don't replace old ones.
+
+Task lists (T1.1)
+─────────────────
+
+• ☐ unchecked item
+• ☑ checked item (lowercase x)
+• ☑ checked item (uppercase X)
+• plain bullet item, no checkbox
+
+1. ☐ first ordered task
+2. ☑ second ordered task, done
+3. plain ordered item
+
+• ☑ checked item with continuation second line of the same item, indented under
+    the checkbox
+
+Strikethrough (T1.1)
+────────────────────
+
+This is ~~deleted text~~ inside a sentence.
+
+~~Whole line struck through.~~
+
+Mixed bold and ~~struck~~ together.
+
+Reference links, titles, images (T1.2)
+──────────────────────────────────────
+
+Inline link with title: ]8;;https://www.anthropic.com\Anthropic]8;;\.
+
+Reference link: ]8;;https://example.com/docs\the]8;;\ ]8;;https://example.com/docs\docs]8;;\ explain more.
+
+Collapsed reference: ]8;;https://example.com/docs-ref\Docs]8;;\ ]8;;https://example.com/docs-ref\Ref]8;;\ also works.
+
+Shortcut reference: ]8;;https://example.com/docs-ref\Docs]8;;\ ]8;;https://example.com/docs-ref\Ref]8;;\ resolves the same way.
+
+Undefined reference stays literal: [nowhere][missing-ref].
+
+Undefined shortcut stays literal: [Also Missing].
+
+Image with title: [image: a small logo] (https://example.com/logo.png)
+
+Reference image: [image: alt text] (https://example.com/image.png)
+
+Paren url survives inline: ]8;;https://en.wikipedia.org/wiki/Haskell_(programming_language)\Haskell]8;;\ stays whole.
+
+Paren url by reference: ]8;;https://en.wikipedia.org/wiki/Haskell_(programming_language)\the]8;;\ ]8;;https://en.wikipedia.org/wiki/Haskell_(programming_language)\Haskell]8;;\ ]8;;https://en.wikipedia.org/wiki/Haskell_(programming_language)\article]8;;\.
+
+Paren-form title: ]8;;https://example.com/pt\point]8;;\ ]8;;https://example.com/pt\here]8;;\ uses (title) syntax.
+
+Math small fixes (T1.5)
+───────────────────────
+
+Cube root: ∛(8). Fourth root: ∜(16). Other index: [5]√(32).
+
+Plain root unaffected: √2.
+
+Nested content under a cube root: ∛(x+y).
