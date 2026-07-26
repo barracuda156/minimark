@@ -24,6 +24,7 @@ extensions-plain|extensions|-t plain --glyphs=bmp --width=80
 extensions-ansi-osc8|extensions|-t term --glyphs=bmp --color=none --width=80 --links=osc8
 extensions-man|extensions|-t man
 extensions-rtf|extensions|-t rtf
+extensions-abw|extensions|-t abw
 mathcolor-ansi-16|mathcolor|-t term --glyphs=bmp --color=16 --width=80
 mathcolor-ansi-true|mathcolor|-t term --glyphs=bmp --color=true --width=80
 mathcolor-ansi-none|mathcolor|-t term --glyphs=bmp --color=none --width=80

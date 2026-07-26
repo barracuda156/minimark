@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<abiword xmlns="http://www.abisource.com/awml.dtd" xmlns:xlink="http://www.w3.org/1999/xlink" template="false" fileformat="1.1">
+<section>
+<p style="Heading 1">Extensions</p>
+<p style="Normal">Corpus for Phase 1 markdown constructs added after the initial pipeline. Accumulates across tasks — add new sections, don't replace old ones.</p>
+<p style="Heading 2">Task lists (T1.1)</p>
+<p style="Normal" props="margin-left:0.35in">• [ ] unchecked item</p>
+<p style="Normal" props="margin-left:0.35in">• [x] checked item (lowercase x)</p>
+<p style="Normal" props="margin-left:0.35in">• [x] checked item (uppercase X)</p>
+<p style="Normal" props="margin-left:0.35in">• plain bullet item, no checkbox</p>
+<p style="Normal" props="margin-left:0.35in">1. [ ] first ordered task</p>
+<p style="Normal" props="margin-left:0.35in">2. [x] second ordered task, done</p>
+<p style="Normal" props="margin-left:0.35in">3. plain ordered item</p>
+<p style="Normal" props="margin-left:0.35in">• [x] checked item with continuation second line of the same item, indented under the checkbox</p>
+<p style="Heading 2">Strikethrough (T1.1)</p>
+<p style="Normal">This is <c props="text-decoration:line-through">deleted text</c> inside a sentence.</p>
+<p style="Normal"><c props="text-decoration:line-through">Whole line struck through.</c></p>
+<p style="Normal">Mixed <c props="font-weight:bold">bold and </c><c props="font-weight:bold; text-decoration:line-through">struck</c><c props="font-weight:bold"> together</c>.</p>
+<p style="Heading 2">Reference links, titles, images (T1.2)</p>
+<p style="Normal">Inline link with title: <a xlink:href="https://www.anthropic.com">Anthropic</a>.</p>
+<p style="Normal">Reference link: <a xlink:href="https://example.com/docs">the docs</a> explain more.</p>
+<p style="Normal">Collapsed reference: <a xlink:href="https://example.com/docs-ref">Docs Ref</a> also works.</p>
+<p style="Normal">Shortcut reference: <a xlink:href="https://example.com/docs-ref">Docs Ref</a> resolves the same way.</p>
+<p style="Normal">Undefined reference stays literal: [nowhere][missing-ref].</p>
+<p style="Normal">Undefined shortcut stays literal: [Also Missing].</p>
+<p style="Normal">Image with title: [image: a small logo] (https://example.com/logo.png)</p>
+<p style="Normal">Reference image: [image: alt text] (https://example.com/image.png)</p>
+<p style="Normal">Paren url survives inline: <a xlink:href="https://en.wikipedia.org/wiki/Haskell_(programming_language)">Haskell</a> stays whole.</p>
+<p style="Normal">Paren url by reference: <a xlink:href="https://en.wikipedia.org/wiki/Haskell_(programming_language)">the Haskell article</a>.</p>
+<p style="Normal">Paren-form title: <a xlink:href="https://example.com/pt">point here</a> uses (title) syntax.</p>
+<p style="Heading 2">Math small fixes (T1.5)</p>
+<p style="Normal">Cube root: ∛(8). Fourth root: ∜(16). Other index: [5]√(32).</p>
+<p style="Normal">Plain root unaffected: √2.</p>
+<p style="Normal">Nested content under a cube root: ∛(x+y).</p>
+<p style="Heading 2">Tables (writer coverage)</p>
+<table>
+<cell props="top-attach:0; bot-attach:1; left-attach:0; right-attach:1">
+<p style="Normal"><c props="font-weight:bold">Tool</c></p>
+</cell>
+<cell props="top-attach:0; bot-attach:1; left-attach:1; right-attach:2">
+<p style="Normal"><c props="font-weight:bold">Year</c></p>
+</cell>
+<cell props="top-attach:0; bot-attach:1; left-attach:2; right-attach:3">
+<p style="Normal"><c props="font-weight:bold">Notes</c></p>
+</cell>
+<cell props="top-attach:1; bot-attach:2; left-attach:0; right-attach:1">
+<p style="Normal"><c props="font-family:Courier New">mhs</c></p>
+</cell>
+<cell props="top-attach:1; bot-attach:2; left-attach:1; right-attach:2">
+<p style="Normal">2023</p>
+</cell>
+<cell props="top-attach:1; bot-attach:2; left-attach:2; right-attach:3">
+<p style="Normal">MicroHs <c props="font-weight:bold">compiler</c></p>
+</cell>
+<cell props="top-attach:2; bot-attach:3; left-attach:0; right-attach:1">
+<p style="Normal">groff</p>
+</cell>
+<cell props="top-attach:2; bot-attach:3; left-attach:1; right-attach:2">
+<p style="Normal">1990</p>
+</cell>
+<cell props="top-attach:2; bot-attach:3; left-attach:2; right-attach:3">
+<p style="Normal"><c props="font-style:italic">roff</c> successor</p>
+</cell>
+</table>
+</section>
+</abiword>
