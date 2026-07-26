@@ -41,4 +41,11 @@ Paren-form title: point here (https://example.com/pt) uses (title) syntax.\par
 Cube root: \u8731?(8). Fourth root: \u8732?(16). Other index: [5]\u8730?(32).\par
 Plain root unaffected: \u8730?2.\par
 Nested content under a cube root: \u8731?(x+y).\par
+\fs36\b Tables (writer coverage)\b0\fs24\par
+\trowd\cellx3120\cellx6240\cellx9360
+\intbl\ql\b Tool\b0\cell \intbl\qc\b Year\b0\cell \intbl\qr\b Notes\b0\cell \row
+\trowd\cellx3120\cellx6240\cellx9360
+\intbl\ql \f1 mhs\f0 \cell \intbl\qc 2023\cell \intbl\qr MicroHs \b compiler\b0 \cell \row
+\trowd\cellx3120\cellx6240\cellx9360
+\intbl\ql groff\cell \intbl\qc 1990\cell \intbl\qr \i roff\i0  successor\cell \row
 }

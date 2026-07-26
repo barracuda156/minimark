@@ -88,14 +88,16 @@ itemBody bs = case bs of
   _         -> concatMap block bs
 
 -- tbl-free RTF table: \trowd/\cellx per column, \intbl cells, \row end.
--- Column widths are a flat estimate (twips) since minimark doesn't
--- track cell content width for RTF; readers auto-fit on overflow.
+-- Flat equal column widths over the usable US-Letter width (8.5in −
+-- 2×1in margins = 6.5in = 9360 twips; RTF defaults to Letter when no
+-- \paperw is given, and \cellx positions are absolute right edges —
+-- dividing 1440 here would make the WHOLE table one inch wide).
 table :: [Align] -> [[Inline]] -> [[[Inline]]] -> String
 table aligns hdr rows =
   concatMap (trow True) [hdr] ++ concatMap (trow False) rows
   where
     ncol = length hdr
-    colw = 1440 `div` max 1 ncol
+    colw = 9360 `div` max 1 ncol
     cellx = concatMap (\i -> "\\cellx" ++ show ((i + 1) * colw)) [0 .. ncol - 1]
     trow bold cells =
       "\\trowd" ++ cellx ++ "\n"

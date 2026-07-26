@@ -62,3 +62,10 @@ Cube root: $\sqrt[3]{8}$. Fourth root: $\sqrt[4]{16}$. Other index: $\sqrt[5]{32
 Plain root unaffected: $\sqrt{2}$.
 
 Nested content under a cube root: $\sqrt[3]{x+y}$.
+
+## Tables (writer coverage)
+
+| Tool | Year | Notes |
+|:-----|:----:|------:|
+| `mhs` | 2023 | MicroHs **compiler** |
+| groff | 1990 | *roff* successor |

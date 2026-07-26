@@ -68,4 +68,13 @@ Plain root unaffected: $\sqrt{2}$.
 
 Nested content under a cube root: $\sqrt[3]{x+y}$.
 
+\subsection{Tables (writer coverage)}
+
+\begin{tabular}{lcr}
+Tool & Year & Notes \\
+\hline
+\texttt{mhs} & 2023 & MicroHs \textbf{compiler} \\
+groff & 1990 & \emph{roff} successor \\
+\end{tabular}
+
 \end{document}

@@ -60,5 +60,15 @@ hr { border: none; border-top: 1px solid #bbb; }
 <p>Cube root: <span class="math">∛(8)</span>. Fourth root: <span class="math">∜(16)</span>. Other index: <span class="math">[5]√(32)</span>.</p>
 <p>Plain root unaffected: <span class="math">√2</span>.</p>
 <p>Nested content under a cube root: <span class="math">∛(x+y)</span>.</p>
+<h2>Tables (writer coverage)</h2>
+<table>
+<thead>
+<tr><th>Tool</th><th style="text-align:center">Year</th><th style="text-align:right">Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>mhs</code></td><td style="text-align:center">2023</td><td style="text-align:right">MicroHs <strong>compiler</strong></td></tr>
+<tr><td>groff</td><td style="text-align:center">1990</td><td style="text-align:right"><em>roff</em> successor</td></tr>
+</tbody>
+</table>
 </body>
 </html>
