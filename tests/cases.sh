@@ -21,6 +21,12 @@ extensions-ansi-ascii|extensions|-t term --glyphs=ascii --color=none --width=80
 extensions-html|extensions|-t html -s --glyphs=bmp
 extensions-latex|extensions|-t latex -s
 extensions-plain|extensions|-t plain --glyphs=bmp --width=80
+mathcolor-ansi-16|mathcolor|-t term --glyphs=bmp --color=16 --width=80
+mathcolor-ansi-true|mathcolor|-t term --glyphs=bmp --color=true --width=80
+mathcolor-ansi-none|mathcolor|-t term --glyphs=bmp --color=none --width=80
+mathcolor-ansi-ascii|mathcolor|-t term --glyphs=ascii --color=16 --width=80
+mathcolor-html|mathcolor|-t html -s --glyphs=bmp
+mathcolor-latex|mathcolor|-t latex -s
 frontmatter-ansi-bmp|frontmatter|-t term --glyphs=bmp --color=none --width=80
 frontmatter-ansi-full|frontmatter|-t term --glyphs=full --color=none --width=80
 frontmatter-ansi-ascii|frontmatter|-t term --glyphs=ascii --color=none --width=80

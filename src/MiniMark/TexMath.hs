@@ -83,6 +83,10 @@ command cmd r
       Nothing      -> let (a, r1) = pArg r  in (MSqrt a, r1)
   | cmd `elem` ["text", "textrm", "mathrm", "mbox", "operatorname"] =
       let (txt, r1) = rawArg r in (MText txt, r1)
+  | cmd == "textcolor" =
+      let (name, r1) = rawArg r
+          (a, r2)    = pArg r1
+      in (MColor name a, r2)
   | cmd `elem` ["mathbb"]                     = styled SBb r
   | cmd `elem` ["mathcal", "cal", "mathscr"]  = styled SCal r
   | cmd `elem` ["mathfrak", "frak"]           = styled SFrak r

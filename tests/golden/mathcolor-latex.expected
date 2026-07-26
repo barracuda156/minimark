@@ -1,0 +1,24 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\begin{document}
+
+\section{Math color (T1.5)}
+
+Inline known color: $\textcolor{red}{E=mc^2}$ stays inline.
+
+All eight base names: $\textcolor{green}{g}$, $\textcolor{blue}{b}$, $\textcolor{cyan}{c}$, $\textcolor{magenta}{m}$, $\textcolor{yellow}{y}$, $\textcolor{black}{k}$, $\textcolor{white}{w}$.
+
+Unknown color name renders uncolored: $\textcolor{orange}{x+1}$.
+
+Nested inside a fraction the color survives: $\frac{\textcolor{green}{a+b}}{2}$.
+
+Inside a script the color flattens away (scripts are leaves): $x^{\textcolor{red}{2}}$.
+
+Display math:
+
+\[ \textcolor{blue}{\sum_{i=1}^n i} = \frac{n(n+1)}{2} \]
+
+\end{document}

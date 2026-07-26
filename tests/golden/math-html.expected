@@ -78,8 +78,8 @@ hr { border: none; border-top: 1px solid #bbb; }
 <div class="math display">Let x be a real number.</div>
 <h3>Colored Math</h3>
 <p>You can color math expressions using the <code>\textcolor{color}{math}</code> command:</p>
-<div class="math display">\textcolorredE=mc²</div>
-<div class="math display">\textcolorblue∑ᵢ₌₁ⁿi</div>
+<div class="math display">E=mc²</div>
+<div class="math display">∑ᵢ₌₁ⁿi</div>
 <h3>Math Macros</h3>
 <p>You can define custom macros:</p>
 <pre><code class="language-latex">\newcommand{\norm}[1]{\left\lVert#1\right\rVert}

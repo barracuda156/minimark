@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>inputs/mathcolor.md</title>
+<style>
+body { font-family: Georgia, serif; max-width: 42em;
+       margin: 2em auto; padding: 0 1em; line-height: 1.5; }
+code { font-family: Menlo, Monaco, monospace; font-size: 0.92em;
+       background: #f2f2f2; padding: 0 0.15em; }
+pre { background: #f6f6f6; border: 1px solid #ddd; padding: 0.8em;
+      overflow-x: auto; }
+pre code { background: none; padding: 0; }
+blockquote { border-left: 3px solid #9c9; margin-left: 0;
+             padding-left: 1em; color: #444; }
+table { border-collapse: collapse; }
+th, td { border: 1px solid #bbb; padding: 0.25em 0.6em; }
+th { background: #eee; }
+.math { white-space: nowrap; }
+.math.display { display: block; text-align: center; margin: 1em 0;
+                white-space: normal; }
+hr { border: none; border-top: 1px solid #bbb; }
+</style>
+</head>
+<body>
+<h1>Math color (T1.5)</h1>
+<p>Inline known color: <span class="math">E=mc²</span> stays inline.</p>
+<p>All eight base names: <span class="math">g</span>, <span class="math">b</span>, <span class="math">c</span>, <span class="math">m</span>, <span class="math">y</span>, <span class="math">k</span>, <span class="math">w</span>.</p>
+<p>Unknown color name renders uncolored: <span class="math">x+1</span>.</p>
+<p>Nested inside a fraction the color survives: <span class="math">(a+b)/2</span>.</p>
+<p>Inside a script the color flattens away (scripts are leaves): <span class="math">x²</span>.</p>
+<p>Display math:</p>
+<div class="math display">∑ᵢ₌₁ⁿi=(n(n+1))/2</div>
+</body>
+</html>

@@ -24,6 +24,7 @@ data AnsiOpts = AnsiOpts
 -- Styles
 
 data Color = CBlue | CCyan | CGreen | CYellow | CMagenta | CGray
+           | CRed | CBlack | CWhite
   deriving (Eq)
 
 data Style = Style
@@ -45,6 +46,9 @@ col16 CGreen = 32
 col16 CYellow = 33
 col16 CMagenta = 35
 col16 CGray = 37
+col16 CRed = 31
+col16 CBlack = 30
+col16 CWhite = 37
 
 colRgb :: Color -> (Int, Int, Int)
 colRgb CBlue    = (95, 175, 255)
@@ -53,6 +57,9 @@ colRgb CGreen   = (95, 195, 95)
 colRgb CYellow  = (215, 175, 0)
 colRgb CMagenta = (200, 120, 245)
 colRgb CGray    = (150, 150, 150)
+colRgb CRed     = (220, 95, 95)
+colRgb CBlack   = (0, 0, 0)
+colRgb CWhite   = (235, 235, 235)
 
 sgr :: AnsiOpts -> Style -> String
 sgr o st
@@ -142,12 +149,29 @@ inlineSpans o st = concatMap f
     f (Image alt url _) =
       [(st{sDim = True}, "[image: " ++ flatText alt ++ "]")]
       ++ [(st{sDim = True}, " (" ++ url ++ ")")]
-    f (MathI raw es) = [(st, mathText o raw es)]
+    f (MathI raw es) = mathSpans o st raw es
 
-mathText :: AnsiOpts -> String -> [MExpr] -> String
-mathText o raw es
-  | aoAscii o = "$" ++ raw ++ "$"
-  | otherwise = renderMath (aoGlyphs o) es
+-- Math as styled spans (T1.5): SpColor tags from \textcolor become an
+-- SGR foreground; every other span collapses exactly as renderMath
+-- would, so output without color escapes is byte-identical to the
+-- collapsed form.  Unknown color names render uncolored.
+mathSpans :: AnsiOpts -> Style -> String -> [MExpr] -> [Span]
+mathSpans o st raw es
+  | aoAscii o = [(st, "$" ++ raw ++ "$")]
+  | otherwise = map conv (renderMathSpans lvl es)
+  where
+    lvl = aoGlyphs o
+    conv (SpColor nm, t) = case texColor nm of
+                             Just c  -> (st{sFg = Just c}, t)
+                             Nothing -> (st, t)
+    conv (sp, t)         = (st, collapseSpans lvl [(sp, t)])
+
+-- The 8 LaTeX base color names (the \textcolor set minimark maps).
+texColor :: String -> Maybe Color
+texColor nm = lookup nm
+  [ ("red", CRed), ("green", CGreen), ("blue", CBlue), ("cyan", CCyan)
+  , ("magenta", CMagenta), ("yellow", CYellow)
+  , ("black", CBlack), ("white", CWhite) ]
 
 flatText :: [Inline] -> String
 flatText = concatMap f
@@ -273,7 +297,8 @@ blockLines o depth b = case b of
     tableLines o aligns hdr rows
 
   DisplayMath raw es ->
-    let t = if aoAscii o then raw else renderMath (aoGlyphs o) es
+    let t = if aoAscii o then raw
+            else renderSpans o (mathSpans o plainS raw es)
     in indentLines 4 [t]
 
 -- one list item: label on first line, hanging indent after.

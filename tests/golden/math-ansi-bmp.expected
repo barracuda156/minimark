@@ -91,9 +91,9 @@ Colored Math
 
 You can color math expressions using the \textcolor{color}{math} command:
 
-    \textcolorredE=mc²
+    E=mc²
 
-    \textcolorblue∑ᵢ₌₁ⁿi
+    ∑ᵢ₌₁ⁿi
 
 Math Macros
 

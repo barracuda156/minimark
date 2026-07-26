@@ -52,6 +52,7 @@ data MExpr
   | MFrac [MExpr] [MExpr]
   | MSqrt [MExpr]
   | MStyle MStyle [MExpr]
+  | MColor String [MExpr]            -- \textcolor{name}{..}, name verbatim
   | MUnknown String                  -- unrecognized \command, kept verbatim
 
 data MStyle = SBb | SCal | SFrak | SBold | SItal | SRoman

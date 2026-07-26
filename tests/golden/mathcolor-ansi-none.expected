@@ -1,0 +1,16 @@
+Math color (T1.5)
+═════════════════
+
+Inline known color: E=mc² stays inline.
+
+All eight base names: g, b, c, m, y, k, w.
+
+Unknown color name renders uncolored: x+1.
+
+Nested inside a fraction the color survives: (a+b)/2.
+
+Inside a script the color flattens away (scripts are leaves): x².
+
+Display math:
+
+    ∑ᵢ₌₁ⁿi=(n(n+1))/2

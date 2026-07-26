@@ -20,6 +20,11 @@
 --   SpStyled st  text already ran the (level, style) char map; the tag
 --                lets a writer add SGR styling where that map is the
 --                identity (\mathbf / \mathit at GBmp).
+--   SpColor nm   text is final output; nm is the \textcolor color name
+--                verbatim, for writers that can colorize (ANSI SGR).
+--                collapseSpans drops the tag, so non-color writers
+--                render the content uncolored.  Like SpStyled, nested
+--                structure is flattened (color spans are leaves).
 module MiniMark.MathRender(
   GlyphLevel(..), MathSpan(..), ScriptPos(..),
   renderMath, renderMathSpans, collapseSpans,
@@ -36,6 +41,7 @@ data ScriptPos = PSub | PSup
   deriving (Eq)
 
 data MathSpan = SpPlain | SpScript ScriptPos | SpStyled MStyle
+              | SpColor String
   deriving (Eq)
 
 renderMath :: GlyphLevel -> [MExpr] -> String
@@ -80,6 +86,8 @@ rm _   (MText t)      = [(SpPlain, t)]
 rm lvl (MGroup es)    = renderMathSpans lvl es
 rm lvl (MStyle st es) =
   [(SpStyled st, mapStyle lvl st (renderMath lvl es))]
+rm lvl (MColor nm es) =
+  [(SpColor nm, renderMath lvl es)]
 rm lvl (MScript b sub sup) =
      rm lvl b
   ++ maybe [] (script PSub) sub

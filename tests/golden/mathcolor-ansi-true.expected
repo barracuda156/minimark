@@ -1,0 +1,16 @@
+[1;38;2;200;120;245mMath color (T1.5)[0m
+[1;38;2;200;120;245m═════════════════[0m
+
+Inline known color: [38;2;220;95;95mE=mc²[0m stays inline.
+
+All eight base names: [38;2;95;195;95mg[0m, [38;2;95;175;255mb[0m, [38;2;0;190;190mc[0m, [38;2;200;120;245mm[0m, [38;2;215;175;0my[0m, [38;2;0;0;0mk[0m, [38;2;235;235;235mw[0m.
+
+Unknown color name renders uncolored: x+1.
+
+Nested inside a fraction the color survives: ([38;2;95;195;95ma+b[0m)/2.
+
+Inside a script the color flattens away (scripts are leaves): x².
+
+Display math:
+
+    [38;2;95;175;255m∑ᵢ₌₁ⁿi[0m=(n(n+1))/2
