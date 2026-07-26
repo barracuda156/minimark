@@ -158,7 +158,7 @@ listBlock ls@(l:_) =
     Nothing -> paraBlock ls
     Just (ord, start, _) ->
       let (items, rest) = collectItems ord ls
-          blocks = map parseBlocks items
+          blocks = map (ListItem Nothing . parseBlocks) items
       in (if ord then OrderedList start blocks else BulletList blocks)
          : parseBlocks rest
 listBlock [] = []

@@ -252,8 +252,8 @@ blockLines o depth b = case b of
 
 -- one list item: label on first line, hanging indent after.
 -- Tight rendering: no blank separators inside an item.
-item :: AnsiOpts -> String -> Int -> Int -> [Block] -> [String]
-item o lbl ind depth bs =
+item :: AnsiOpts -> String -> Int -> Int -> ListItem -> [String]
+item o lbl ind depth (ListItem _ bs) =
   case concatMap (blockLines o (depth + 1)) bs of
     []     -> [lbl]
     (l:ls) -> (lbl ++ l) : indentLines ind ls

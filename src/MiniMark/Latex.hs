@@ -79,8 +79,8 @@ block b = case b of
        ++ "\\end{tabular}\n"
   DisplayMath raw _ -> "\\[ " ++ raw ++ " \\]\n"
 
-item :: [Block] -> String
-item bs = "\\item " ++ intercalate "\n" (map block bs)
+item :: ListItem -> String
+item (ListItem _ bs) = "\\item " ++ intercalate "\n" (map block bs)
 
 inlines :: [Inline] -> String
 inlines = concatMap f

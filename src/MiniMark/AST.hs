@@ -20,14 +20,16 @@ data Block
   = Heading Int [Inline]
   | Para [Inline]
   | CodeBlock String [String]        -- language ("" if none), source lines
-  | BulletList [[Block]]
-  | OrderedList Int [[Block]]        -- start number, items
+  | BulletList [ListItem]
+  | OrderedList Int [ListItem]       -- start number, items
   | Quote [Block]
   | HRule
   | Table [Align] [[Inline]] [[[Inline]]]  -- column aligns, header cells, body rows
   | DisplayMath String [MExpr]       -- raw TeX (lossless), parsed form
 
 data Align = ALeft | ACenter | ARight
+
+data ListItem = ListItem (Maybe Bool) [Block]  -- Just True = checked
 
 data Inline
   = Str String

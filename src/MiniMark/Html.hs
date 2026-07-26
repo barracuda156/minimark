@@ -77,8 +77,8 @@ block o b = case b of
   DisplayMath raw es ->
     "<div class=\"math display\">" ++ esc (mathText o raw es) ++ "</div>\n"
 
-li :: HtmlOpts -> [Block] -> String
-li o bs = "<li>" ++ tight ++ "</li>\n"
+li :: HtmlOpts -> ListItem -> String
+li o (ListItem _ bs) = "<li>" ++ tight ++ "</li>\n"
   where
     -- single-paragraph items render without <p> wrapper
     tight = case bs of
