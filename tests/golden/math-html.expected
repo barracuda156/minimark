@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>../../minimark_rendering/math-sample.md</title>
+<style>
+body { font-family: Georgia, serif; max-width: 42em;
+       margin: 2em auto; padding: 0 1em; line-height: 1.5; }
+code { font-family: Menlo, Monaco, monospace; font-size: 0.92em;
+       background: #f2f2f2; padding: 0 0.15em; }
+pre { background: #f6f6f6; border: 1px solid #ddd; padding: 0.8em;
+      overflow-x: auto; }
+pre code { background: none; padding: 0; }
+blockquote { border-left: 3px solid #9c9; margin-left: 0;
+             padding-left: 1em; color: #444; }
+table { border-collapse: collapse; }
+th, td { border: 1px solid #bbb; padding: 0.25em 0.6em; }
+th { background: #eee; }
+.math { white-space: nowrap; }
+.math.display { display: block; text-align: center; margin: 1em 0;
+                white-space: normal; }
+hr { border: none; border-top: 1px solid #bbb; }
+</style>
+</head>
+<body>
+<hr>
+<p>title: &quot;Markdown Syntax Showcase&quot; description: &quot;A comprehensive example of Markdown syntax supported by mdast.&quot; author: &quot;Mayank Chaudhari&quot; date: &quot;2025-03-03&quot; categories: [Markdown, Syntax, Documentation] tags: [mdast, markdown, reference]</p>
+<hr>
+<h1>Markdown Syntax Showcase</h1>
+<h2>9. Math Equations (KaTeX / LaTeX)</h2>
+<p>Displaying mathematical expressions.</p>
+<p>Inline equation: <span class="math">E=mc²</span></p>
+<p>Block equation:</p>
+<div class="math display">∑_(n=1)^∞1/(n²)=(π²)/6</div>
+<h3>Inline Math</h3>
+<p>Inline math expressions can be enclosed within single dollar signs: <span class="math">E=mc²</span>. You can also use <code>\\(</code> and <code>\\)</code>: <span class="math">∑ᵢ₌₁ⁿi²</span>. With hat &quot;$<span class="math">x̂</span>$&quot;.</p>
+<h3>Display Math</h3>
+<p>Display math expressions are enclosed within double dollar signs, which renders them on their own line:</p>
+<div class="math display">∫₀^∞x²e^(-x²)dx=(√π)/4</div>
+<p>You can also use <code>\\[</code> and <code>\\]</code>:</p>
+<div class="math display">d/(dx)(1/x)=-1/(x²)</div>
+<h3>Common Math Symbols</h3>
+<p>Here are some common mathematical symbols:</p>
+<ul>
+<li>Greek letters: <span class="math">α</span>, <span class="math">β</span>, <span class="math">γ</span>, <span class="math">Γ</span>, <span class="math">Δ</span>, <span class="math">π</span>, <span class="math">Π</span>, <span class="math">Σ</span>, <span class="math">ω</span>, <span class="math">Ω</span></li>
+<li>Superscripts and subscripts: <span class="math">x²</span>, <span class="math">yᵢ</span>, <span class="math">aᵇ⁺ᶜ</span>, <span class="math">e^(-iωt)</span></li>
+<li>Fractions: <span class="math">1/2</span>, <span class="math">(x+y)/z</span></li>
+<li>Square roots: <span class="math">√x</span>, <span class="math">√[3]y</span></li>
+<li>Summations and products: <span class="math">∑ᵢ₌₁ⁿi</span>, <span class="math">∏_(j=1)ᵐj</span></li>
+<li>Integrals: <span class="math">∫ₐᵇf(x)dx</span>, <span class="math">∮_CF⃗⋅dr⃗</span></li>
+<li>Limits: <span class="math">lim_(x→∞)1/x</span></li>
+<li>Vectors: <span class="math">v⃗</span>, <span class="math">v</span></li>
+<li>Matrices: <span class="math">\beginpmatrixa&amp;b c&amp;d\endpmatrix</span></li>
+<li>Partial derivatives: <span class="math">(∂f)/(∂x)</span></li>
+<li>Infinity: <span class="math">∞</span></li>
+<li>Logical symbols: <span class="math">∀</span>, <span class="math">∃</span>, <span class="math">∈</span>, <span class="math">∉</span>, <span class="math">⊆</span>, <span class="math">⊇</span>, <span class="math">∧</span>, <span class="math">∨</span>, <span class="math">¬</span></li>
+<li>Trigonometric functions: <span class="math">sin(x)</span>, <span class="math">cos(y)</span>, <span class="math">tan(z)</span></li>
+<li>Exponential and logarithmic functions: <span class="math">eˣ</span>, <span class="math">ln(y)</span>, <span class="math">log₁₀(z)</span></li>
+</ul>
+<h3>Matrices</h3>
+<p>Matrices can be created using the <code>pmatrix</code>, <code>bmatrix</code>, <code>vmatrix</code>, and <code>Vmatrix</code> environments:</p>
+<div class="math display">\beginpmatrix1&amp;2&amp;3 4&amp;5&amp;6 7&amp;8&amp;9\endpmatrix</div>
+<div class="math display">\beginbmatrix1&amp;2 3&amp;4\endbmatrix</div>
+<div class="math display">\beginvmatrixa&amp;b c&amp;d\endvmatrix</div>
+<div class="math display">\beginVmatrixa&amp;b c&amp;d\endVmatrix</div>
+<h3>Alignments</h3>
+<p>You can align equations using the <code>align</code> environment:</p>
+<div class="math display">\beginaligny&amp;=mx+b y'&amp;=m\endalign</div>
+<p>You can also use <code>aligned</code> for aligning parts of an equation:</p>
+<div class="math display">f(x)=\begincasesx²,&amp;if x≥0 -x²,&amp;otherwise\endcases</div>
+<div class="math display">\beginaligned(a+b)²&amp;=(a+b)(a+b) &amp;=a²+ab+ba+b² &amp;=a²+2ab+b²\endaligned</div>
+<h3>Case Statements</h3>
+<p>Case statements can be created using the <code>cases</code> environment:</p>
+<div class="math display">f(x)=\begincases1,&amp;if x&gt;0 0,&amp;if x=0 -1,&amp;if x&lt;0\endcases</div>
+<h3>Text in Math</h3>
+<p>You can include text within math expressions using the <code>\text{}</code> command:</p>
+<div class="math display">Let x be a real number.</div>
+<h3>Colored Math</h3>
+<p>You can color math expressions using the <code>\textcolor{color}{math}</code> command:</p>
+<div class="math display">\textcolorredE=mc²</div>
+<div class="math display">\textcolorblue∑ᵢ₌₁ⁿi</div>
+<h3>Math Macros</h3>
+<p>You can define custom macros:</p>
+<pre><code class="language-latex">\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+</code></pre>
+</body>
+</html>

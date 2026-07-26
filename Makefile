@@ -15,7 +15,10 @@ minimark: src/MiniMark/*.hs
 c: src/MiniMark/*.hs
 	$(MHS) $(MHSFLAGS) MiniMark.Main -ominimark.c
 
+test: minimark
+	tests/run.sh
+
 clean:
 	rm -f minimark minimark.c .mhscache
 
-.PHONY: c clean
+.PHONY: c clean test

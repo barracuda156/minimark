@@ -1,0 +1,110 @@
+────────────────────────────────────────────────────────────────────────────────
+
+title: "Markdown Syntax Showcase" description: "A comprehensive example of
+Markdown syntax supported by mdast." author: "Mayank Chaudhari" date:
+"2025-03-03" categories: [Markdown, Syntax, Documentation] tags: [mdast,
+markdown, reference]
+
+────────────────────────────────────────────────────────────────────────────────
+
+Markdown Syntax Showcase
+════════════════════════
+
+9. Math Equations (KaTeX / LaTeX)
+─────────────────────────────────
+
+Displaying mathematical expressions.
+
+Inline equation: E=mc²
+
+Block equation:
+
+    ∑_(n=1)^∞1/(n²)=(π²)/6
+
+Inline Math
+
+Inline math expressions can be enclosed within single dollar signs: E=mc². You
+can also use \\( and \\): ∑ᵢ₌₁ⁿi². With hat "$x̂$".
+
+Display Math
+
+Display math expressions are enclosed within double dollar signs, which renders
+them on their own line:
+
+    ∫₀^∞x²e^(-x²)dx=(√π)/4
+
+You can also use \\[ and \\]:
+
+    d/(dx)(1/x)=-1/(x²)
+
+Common Math Symbols
+
+Here are some common mathematical symbols:
+
+• Greek letters: α, β, γ, Γ, Δ, π, Π, Σ, ω, Ω
+• Superscripts and subscripts: x², yᵢ, aᵇ⁺ᶜ, e^(-iωt)
+• Fractions: 1/2, (x+y)/z
+• Square roots: √x, √[3]y
+• Summations and products: ∑ᵢ₌₁ⁿi, ∏_(j=1)ᵐj
+• Integrals: ∫ₐᵇf(x)dx, ∮_CF⃗⋅dr⃗
+• Limits: lim_(x→∞)1/x
+• Vectors: v⃗, v
+• Matrices: \beginpmatrixa&b c&d\endpmatrix
+• Partial derivatives: (∂f)/(∂x)
+• Infinity: ∞
+• Logical symbols: ∀, ∃, ∈, ∉, ⊆, ⊇, ∧, ∨, ¬
+• Trigonometric functions: sin(x), cos(y), tan(z)
+• Exponential and logarithmic functions: eˣ, ln(y), log₁₀(z)
+
+Matrices
+
+Matrices can be created using the pmatrix, bmatrix, vmatrix, and Vmatrix
+environments:
+
+    \beginpmatrix1&2&3 4&5&6 7&8&9\endpmatrix
+
+    \beginbmatrix1&2 3&4\endbmatrix
+
+    \beginvmatrixa&b c&d\endvmatrix
+
+    \beginVmatrixa&b c&d\endVmatrix
+
+Alignments
+
+You can align equations using the align environment:
+
+    \beginaligny&=mx+b y'&=m\endalign
+
+You can also use aligned for aligning parts of an equation:
+
+    f(x)=\begincasesx²,&if x≥0 -x²,&otherwise\endcases
+
+    \beginaligned(a+b)²&=(a+b)(a+b) &=a²+ab+ba+b² &=a²+2ab+b²\endaligned
+
+Case Statements
+
+Case statements can be created using the cases environment:
+
+    f(x)=\begincases1,&if x>0 0,&if x=0 -1,&if x<0\endcases
+
+Text in Math
+
+You can include text within math expressions using the \text{} command:
+
+    Let x be a real number.
+
+Colored Math
+
+You can color math expressions using the \textcolor{color}{math} command:
+
+    \textcolorredE=mc²
+
+    \textcolorblue∑ᵢ₌₁ⁿi
+
+Math Macros
+
+You can define custom macros:
+
+┌─ latex ──────────────────────────────────────────┐
+│ \newcommand{\norm}[1]{\left\lVert#1\right\rVert} │
+└──────────────────────────────────────────────────┘

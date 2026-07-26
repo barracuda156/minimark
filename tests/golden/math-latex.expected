@@ -1,0 +1,113 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\begin{document}
+
+\noindent\hrulefill
+
+title: "Markdown Syntax Showcase" description: "A comprehensive example of Markdown syntax supported by mdast." author: "Mayank Chaudhari" date: "2025-03-03" categories: [Markdown, Syntax, Documentation] tags: [mdast, markdown, reference]
+
+\noindent\hrulefill
+
+\section{Markdown Syntax Showcase}
+
+\subsection{9. Math Equations (KaTeX / LaTeX)}
+
+Displaying mathematical expressions.
+
+Inline equation: $E=mc^2$
+
+Block equation:
+
+\[ \sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6} \]
+
+\subsubsection{Inline Math}
+
+Inline math expressions can be enclosed within single dollar signs: $E=mc^2$. You can also use \texttt{\textbackslash{}\textbackslash{}(} and \texttt{\textbackslash{}\textbackslash{})}: $\sum_{i=1}^{n} i^2$. With hat "\$$\hat{x}$\$".
+
+\subsubsection{Display Math}
+
+Display math expressions are enclosed within double dollar signs, which renders them on their own line:
+
+\[ \int_0^\infty x^2 e^{-x^2} dx = \frac{\sqrt{\pi}}{4} \]
+
+You can also use \texttt{\textbackslash{}\textbackslash{}[} and \texttt{\textbackslash{}\textbackslash{}]}:
+
+\[ \frac{d}{dx} \left( \frac{1}{x} \right) = -\frac{1}{x^2} \]
+
+\subsubsection{Common Math Symbols}
+
+Here are some common mathematical symbols:
+
+\begin{itemize}
+\item Greek letters: $\alpha$, $\beta$, $\gamma$, $\Gamma$, $\Delta$, $\pi$, $\Pi$, $\Sigma$, $\omega$, $\Omega$
+\item Superscripts and subscripts: $x^2$, $y_i$, $a^{b+c}$, $e^{-i\omega t}$
+\item Fractions: $\frac{1}{2}$, $\frac{x+y}{z}$
+\item Square roots: $\sqrt{x}$, $\sqrt[3]{y}$
+\item Summations and products: $\sum_{i=1}^n i$, $\prod_{j=1}^m j$
+\item Integrals: $\int_a^b f(x) dx$, $\oint_C \vec{F} \cdot d\vec{r}$
+\item Limits: $\lim_{x \to \infty} \frac{1}{x}$
+\item Vectors: $\vec{v}$, $\mathbf{v}$
+\item Matrices: $\begin{pmatrix} a & b \\ c & d \end{pmatrix}$
+\item Partial derivatives: $\frac{\partial f}{\partial x}$
+\item Infinity: $\infty$
+\item Logical symbols: $\forall$, $\exists$, $\in$, $\notin$, $\subseteq$, $\supseteq$, $\land$, $\lor$, $\neg$
+\item Trigonometric functions: $\sin(x)$, $\cos(y)$, $\tan(z)$
+\item Exponential and logarithmic functions: $e^x$, $\ln(y)$, $\log_{10}(z)$
+\end{itemize}
+
+\subsubsection{Matrices}
+
+Matrices can be created using the \texttt{pmatrix}, \texttt{bmatrix}, \texttt{vmatrix}, and \texttt{Vmatrix} environments:
+
+\[ \begin{pmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \\ 7 & 8 & 9 \end{pmatrix} \]
+
+\[ \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix} \]
+
+\[ \begin{vmatrix} a & b \\ c & d \end{vmatrix} \]
+
+\[ \begin{Vmatrix} a & b \\ c & d \end{Vmatrix} \]
+
+\subsubsection{Alignments}
+
+You can align equations using the \texttt{align} environment:
+
+\[ \begin{align} y &= mx + b \\ y' &= m \end{align} \]
+
+You can also use \texttt{aligned} for aligning parts of an equation:
+
+\[ f(x) = \begin{cases} x^2, & \text{if } x \ge 0 \\ -x^2, & \text{otherwise} \end{cases} \]
+
+\[ \begin{aligned} (a+b)^2 &= (a+b)(a+b) \\ &= a^2 + ab + ba + b^2 \\ &= a^2 + 2ab + b^2 \end{aligned} \]
+
+\subsubsection{Case Statements}
+
+Case statements can be created using the \texttt{cases} environment:
+
+\[ f(x) = \begin{cases} 1, & \text{if } x > 0 \\ 0, & \text{if } x = 0 \\ -1, & \text{if } x < 0 \end{cases} \]
+
+\subsubsection{Text in Math}
+
+You can include text within math expressions using the \texttt{\textbackslash{}text\{\}} command:
+
+\[ \text{Let } x \text{ be a real number.} \]
+
+\subsubsection{Colored Math}
+
+You can color math expressions using the \texttt{\textbackslash{}textcolor\{color\}\{math\}} command:
+
+\[ \textcolor{red}{E=mc^2} \]
+
+\[ \textcolor{blue}{\sum_{i=1}^n i} \]
+
+\subsubsection{Math Macros}
+
+You can define custom macros:
+
+\begin{verbatim}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\end{verbatim}
+
+\end{document}

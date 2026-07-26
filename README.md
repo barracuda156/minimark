@@ -64,6 +64,13 @@ cc -O2 -Idist/runtime -Idist/runtime/unix \
 MicroHs's 400MB+ default — right-sized for a 1GB G4. Override at run
 time with `minimark +RTS -H16M -RTS ...` if ever needed.
 
+## Testing
+
+`make test` (or `tests/run.sh` directly, plain `sh` — works on the ppc
+box) diffs each writer/flag combo against golden files in
+`tests/golden/`. Add a case to `tests/cases.sh`, then
+`tests/run.sh --record NAME` to seed its golden.
+
 ## Notes for MicroHs hackers
 
 `Data.Char.isSpace`/`isAlpha`/... fall back to a lazily-built full
