@@ -76,8 +76,11 @@ command cmd r
       let (a, r1) = pArg r
           (b, r2) = pArg r1
       in (MFrac a b, r2)
-  | cmd == "sqrt" =
-      let (a, r1) = pArg r in (MSqrt a, r1)
+  | cmd == "sqrt" = case sqrtIndex r of
+      Just (3, r0) -> let (a, r1) = pArg r0 in (radical '\x221B' a, r1)
+      Just (4, r0) -> let (a, r1) = pArg r0 in (radical '\x221C' a, r1)
+      Just (n, r0) -> let (a, r1) = pArg r0 in (indexedRadical n a, r1)
+      Nothing      -> let (a, r1) = pArg r  in (MSqrt a, r1)
   | cmd `elem` ["text", "textrm", "mathrm", "mbox", "operatorname"] =
       let (txt, r1) = rawArg r in (MText txt, r1)
   | cmd `elem` ["mathbb"]                     = styled SBb r
@@ -97,6 +100,36 @@ command cmd r
 
 styled :: MStyle -> String -> (MExpr, String)
 styled st r = let (a, r1) = pArg r in (MStyle st a, r1)
+
+-- \sqrt[n]{..}: optional bracketed index right after \sqrt, digits
+-- only. No [n] or malformed (non-digit / unterminated) -> Nothing,
+-- falls back to a plain \sqrt (graceful degradation: never crash,
+-- never eat input the caller didn't ask for).
+sqrtIndex :: String -> Maybe (Int, String)
+sqrtIndex s = case dropWhile isSp s of
+  ('[':t) -> case span isDig t of
+    (ds@(_:_), ']':r) -> Just (readIntT ds, r)
+    _ -> Nothing
+  _ -> Nothing
+
+readIntT :: String -> Int
+readIntT = foldl (\a c -> a * 10 + (fromEnum c - fromEnum '0')) 0
+
+-- \sqrt[3]{a} -> \x221B(a), \sqrt[4]{a} -> \x221C(a): a single radical
+-- glyph (Unicode 3.2, safe at every glyph tier -- MathRender never
+-- gates \x221A itself either) followed by the argument, always
+-- literally parenthesized (T1.5: unlike plain \sqrt, no width-based
+-- smart parenthesization for the indexed forms).
+radical :: Char -> [MExpr] -> MExpr
+radical c a = MGroup (MChar c : parenWrap a)
+
+-- \sqrt[n]{a}, n /= 3,4 -> "[n]" + the ordinary radical sign + (a).
+indexedRadical :: Int -> [MExpr] -> MExpr
+indexedRadical n a =
+  MGroup (MChar '[' : MText (show n) : MChar ']' : MChar '\x221A' : parenWrap a)
+
+parenWrap :: [MExpr] -> [MExpr]
+parenWrap a = MChar '(' : a ++ [MChar ')']
 
 -- \left( \right\rangle \left. ...
 delimTok :: String -> (MExpr, String)

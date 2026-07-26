@@ -55,3 +55,13 @@ Paren url by reference: the Haskell article
 (https://en.wikipedia.org/wiki/Haskell_(programming_language)).
 
 Paren-form title: point here (https://example.com/pt) uses (title) syntax.
+
+Math small fixes (T1.5)
+───────────────────────
+
+Cube root: $\sqrt[3]{8}$. Fourth root: $\sqrt[4]{16}$. Other index:
+$\sqrt[5]{32}$.
+
+Plain root unaffected: $\sqrt{2}$.
+
+Nested content under a cube root: $\sqrt[3]{x+y}$.

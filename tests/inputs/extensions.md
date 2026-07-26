@@ -54,3 +54,11 @@ Paren-form title: [point here][paren-title] uses (title) syntax.
 [img-ref]: https://example.com/image.png "An image"
 [wiki-hask]: https://en.wikipedia.org/wiki/Haskell_(programming_language)
 [paren-title]: https://example.com/pt (Paren Title)
+
+## Math small fixes (T1.5)
+
+Cube root: $\sqrt[3]{8}$. Fourth root: $\sqrt[4]{16}$. Other index: $\sqrt[5]{32}$.
+
+Plain root unaffected: $\sqrt{2}$.
+
+Nested content under a cube root: $\sqrt[3]{x+y}$.

@@ -46,7 +46,7 @@ hr { border: none; border-top: 1px solid #bbb; }
 <li>Greek letters: <span class="math">α</span>, <span class="math">β</span>, <span class="math">γ</span>, <span class="math">Γ</span>, <span class="math">Δ</span>, <span class="math">π</span>, <span class="math">Π</span>, <span class="math">Σ</span>, <span class="math">ω</span>, <span class="math">Ω</span></li>
 <li>Superscripts and subscripts: <span class="math">x²</span>, <span class="math">yᵢ</span>, <span class="math">aᵇ⁺ᶜ</span>, <span class="math">e^(-iωt)</span></li>
 <li>Fractions: <span class="math">1/2</span>, <span class="math">(x+y)/z</span></li>
-<li>Square roots: <span class="math">√x</span>, <span class="math">√[3]y</span></li>
+<li>Square roots: <span class="math">√x</span>, <span class="math">∛(y)</span></li>
 <li>Summations and products: <span class="math">∑ᵢ₌₁ⁿi</span>, <span class="math">∏_(j=1)ᵐj</span></li>
 <li>Integrals: <span class="math">∫ₐᵇf(x)dx</span>, <span class="math">∮_CF⃗⋅dr⃗</span></li>
 <li>Limits: <span class="math">lim_(x→∞)1/x</span></li>
