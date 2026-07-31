@@ -13,9 +13,11 @@
 -- the stylesheet names them "heading N" (else a font-size heuristic);
 -- destination groups we cannot render (fonttbl, stylesheet content,
 -- info, pict, *-prefixed custom destinations, field instructions) are
--- skipped; lists fall back to \pntext bullet markers.  Tables, nested
--- numbering and embedded objects degrade to plain paragraphs.  Graceful
--- degradation is a hard rule: malformed input never crashes.
+-- skipped; lists fall back to \pntext bullet markers.  Tables parse
+-- from \cell/\row boundaries (first row renders as the header; nested
+-- tables flatten into their parent cell).  Nested numbering and
+-- embedded objects degrade to plain paragraphs.  Graceful degradation
+-- is a hard rule: malformed input never crashes.
 module MiniMark.RtfReader(parseRtf) where
 
 import Data.List(isPrefixOf)
@@ -152,6 +154,9 @@ data Acc = Acc
   , curFmt  :: Fmt                   -- format the pending chars were typed in
   , curSty  :: Maybe Int            -- \sN seen for the current paragraph
   , styMap  :: [(Int, String)]      -- \sN -> style name (from stylesheet)
+  , curCells :: [[Inline]]          -- finished cells of the row in progress, reversed
+  , curRows  :: [[[Inline]]]        -- finished rows of the table in progress, reversed
+  , inTbl    :: Bool                -- current paragraph carries \intbl
   }
 
 -- The four run attributes we can represent, snapshotted per literal run.
@@ -162,7 +167,7 @@ fmtOf :: St -> Fmt
 fmtOf s = Fmt (bold s) (ital s) (strk s) (mono s)
 
 acc0 :: [(Int, String)] -> Acc
-acc0 sm = Acc [] [] (Fmt False False False False) Nothing sm
+acc0 sm = Acc [] [] (Fmt False False False False) Nothing sm [] [] False
 
 --------------------------------------------------------------------------
 -- Entry point
@@ -308,13 +313,31 @@ control s a txt fs w marg = case w of
   "fldinst"              -> (s{dest = DField}, a, txt, fs)
 
   -- paragraph / line structure (endPara consumes the pending run;
-  -- pushInline consumes the pending text but fs is paragraph-scoped)
-  "par"      -> (s, endPara a txt fs, [], 0)
-  "pard"     -> (s, a{curSty = Nothing}, txt, fs)  -- reset paragraph props
+  -- pushInline consumes the pending text but fs is paragraph-scoped).
+  -- A \par inside a table cell (\intbl in force) is a paragraph break
+  -- WITHIN the cell — degrade to a line break so multi-paragraph cells
+  -- don't tear the row apart.
+  "par"      -> if inTbl a
+                  then (s, pushInline a txt LineBreak, [], fs)
+                  else (s, endPara a txt fs, [], 0)
+  "pard"     -> (s, a{curSty = Nothing, inTbl = False}, txt, fs)  -- reset paragraph props
   "line"     -> (s, pushInline a txt LineBreak, [], fs)
   "tab"      -> pushCold s a txt fs '\t'
   "sect"     -> (s, endPara a txt fs, [], 0)
   "page"     -> (s, endPara a txt fs, [], 0)
+
+  -- tables: cells end on \cell, rows on \row; the finished table is
+  -- materialized as a Table block by the first paragraph end outside
+  -- \intbl context (endPara -> flushTable).  \intbl marks the current
+  -- paragraph as table content; \pard resets it (RTF paragraph-default
+  -- semantics).  Nested tables (Word 2000+) flatten into their parent
+  -- cell: nested cell breaks become tabs, nested row breaks line
+  -- breaks (\*\nesttableprops is a starred destination, auto-skipped).
+  "cell"     -> (s, endCell a txt fs, [], 0)
+  "row"      -> (s, endRow a txt fs, [], 0)
+  "intbl"    -> (s, a{inTbl = True}, txt, fs)
+  "nestcell" -> pushCold s a txt fs '\t'
+  "nestrow"  -> (s, pushInline a txt LineBreak, [], fs)
 
   -- list bullet fallback (\pntext group holds the marker; we already
   -- render its chars as text, so nothing extra needed — but \bullet is
@@ -483,12 +506,14 @@ pushInline a txt inl =
 -- Paragraph flush + heading detection
 
 -- End the current paragraph: flush the pending run (txt/fs, threaded
--- outside Acc by walk), decide Heading vs Para (or drop an all-blank
--- paragraph), append the block, and reset the paragraph-scoped fields.
--- Callers reset their pending txt/fs to []/0.
+-- outside Acc by walk), flush any finished table riding in the
+-- accumulator (it precedes this paragraph in document order), decide
+-- Heading vs Para (or drop an all-blank paragraph), append the block,
+-- and reset the paragraph-scoped fields.  Callers reset their pending
+-- txt/fs to []/0.
 endPara :: Acc -> [Char] -> Int -> Acc
 endPara a0 txt fs =
-  let a  = flushText a0 txt
+  let a  = flushTable (flushText a0 txt)
       is = reverse (curRun a)
   in if allBlank is
        then a{ curRun = [] :: [Inline], curSty = Nothing }
@@ -498,6 +523,59 @@ endPara a0 txt fs =
             in a{ blocks = (blk : blocks a) :: [Block]
                 , curRun = [] :: [Inline]
                 , curSty = Nothing }
+
+--------------------------------------------------------------------------
+-- Tables
+
+-- End a table cell (\cell): the pending run becomes one cell of the
+-- row in progress.  Cell content keeps its inline styling; a blank
+-- cell is kept as an empty run (it still occupies its grid slot).
+endCell :: Acc -> [Char] -> Int -> Acc
+endCell a0 txt _fs =
+  let a  = flushText a0 txt
+      is = reverse (curRun a)
+      c  = if allBlank is then [] else trimInlines is
+  in a{ curCells = (c : curCells a) :: [[Inline]]
+      , curRun = [] :: [Inline] }
+
+-- End a table row (\row).  Non-blank residue missing its \cell (a
+-- malformed producer) is folded in as a final cell; a \row with no
+-- cells at all is dropped.
+endRow :: Acc -> [Char] -> Int -> Acc
+endRow a0 txt _fs =
+  let a  = flushText a0 txt
+      is = reverse (curRun a)
+      cs = if allBlank is then curCells a
+                          else (trimInlines is : curCells a) :: [[Inline]]
+  in case cs of
+       [] -> a{ curRun = [] :: [Inline] }
+       _  -> a{ curRows  = (reverse cs : curRows a) :: [[[Inline]]]
+              , curCells = [] :: [[Inline]]
+              , curRun   = [] :: [Inline] }
+
+-- Materialize the pending table (if any) as a Table block.  Runs on
+-- the first paragraph end outside \intbl context, and at document end.
+-- The first row becomes the header: the AST is markdown-shaped (a
+-- table always has a header row) and the writers derive the column
+-- count from it; for a "1st column | 2nd column"-style table that is
+-- also visually right.  Columns are left-aligned — RTF cell alignment
+-- lives in per-paragraph \qc/\qr we don't track.  Ragged rows are
+-- padded with empty cells to the widest row.  Leftover cells whose
+-- \row never came still flush, as the final row.
+flushTable :: Acc -> Acc
+flushTable a0 =
+  let a = case curCells a0 of
+            [] -> a0
+            cs -> a0{ curRows  = (reverse cs : curRows a0) :: [[[Inline]]]
+                    , curCells = [] :: [[Inline]] }
+  in case reverse (curRows a) of
+       []          -> a
+       (r0 : rest) ->
+         let ncol  = maximum (map length (r0 : rest))
+             pad r = r ++ replicate (ncol - length r) []
+             blk   = Table (replicate ncol ALeft) (pad r0) (map pad rest)
+         in a{ blocks  = (blk : blocks a) :: [Block]
+             , curRows = [] :: [[[Inline]]] }
 
 -- Heading level for the just-finished paragraph.  First try the named
 -- style (\sN resolved through the stylesheet to "heading N" / "Heading
@@ -556,6 +634,11 @@ trimInlines = trimTrail . trimLead
       let t' = dropWhile isWs t
       in if null t' then trimLead rest else Str t' : rest
     trimLead (LineBreak : rest) = trimLead rest
+    -- an all-blank styled wrapper contributes nothing visible — drop
+    -- it too (e.g. Strong [Str "\t\t\t"]: tabs typed inside the
+    -- previous run's bold group, common in Word output).  Blankness is
+    -- reversal-invariant, so this is safe under trimTrail's reverse'.
+    trimLead (x : rest) | allBlank [x] = trimLead rest
     trimLead xs = xs
     -- reverse' (list reversed + each Str's chars flipped) is its own
     -- inverse, so trimming the "lead" of the doubly-reversed list and
