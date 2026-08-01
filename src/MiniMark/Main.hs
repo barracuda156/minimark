@@ -32,9 +32,9 @@ usage = unlines
   , "usage: minimark [OPTIONS] [FILE ...]        (stdin when no FILE)"
   , ""
   , "  -t FORMAT        term (default) | html | latex | man | rtf | abw | plain"
-  , "  -f FORMAT        input: markdown (default) | rtf | odt | docx | idml"
+  , "  -f FORMAT        input: markdown (default) | rtf | odt | docx | idml | abw"
   , "                   auto-detected from magic bytes / extension;"
-  , "                   markdown and rtf readers are implemented so far"
+  , "                   markdown, rtf and abw readers are implemented so far"
   , "  -o FILE          write output to FILE"
   , "  -s, --standalone full document (html/latex)"
   , "  --color=MODE     auto (default) | none | 16 | true"
@@ -92,7 +92,7 @@ convert opts = do
             Just s -> case parseFormat s of
               Just fm -> return (Just fm)
               Nothing -> die ("unknown input format " ++ s
-                              ++ " (markdown, rtf, odt, docx, idml)")
+                              ++ " (markdown, rtf, odt, docx, idml, abw)")
   eds <- case oFiles opts of
            [] -> fmap (: []) (readDocStdin ffmt)
            fs -> mapM (readF ffmt) fs

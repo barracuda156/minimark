@@ -27,11 +27,13 @@ module MiniMark.Readers(
 
 import System.IO
 import System.IO.Base(openBinaryFile)
+import qualified Data.ByteString as BS
 import MiniMark.AST
 import MiniMark.Reader(parseDocument)
 import MiniMark.RtfReader(parseRtf)
+import MiniMark.AbwReader(parseAbw)
 
-data Format = FMarkdown | FRtf | FOdt | FDocx | FIdml
+data Format = FMarkdown | FRtf | FOdt | FDocx | FIdml | FAbw
   deriving (Eq)
 
 formatName :: Format -> String
@@ -40,6 +42,7 @@ formatName FRtf      = "rtf"
 formatName FOdt      = "odt"
 formatName FDocx     = "docx"
 formatName FIdml     = "idml"
+formatName FAbw      = "abw"
 
 -- Accepted -f / --from values.
 parseFormat :: String -> Maybe Format
@@ -51,6 +54,7 @@ parseFormat s = case s of
   "fodt"     -> Just FOdt
   "docx"     -> Just FDocx
   "idml"     -> Just FIdml
+  "abw"      -> Just FAbw
   _          -> Nothing
 
 -- Read one named input.  Left = user-facing refusal (reader not
@@ -72,6 +76,12 @@ readDocFile mfmt f = do
       -- would hard-error on a stray 0x92).  One Char = one byte here.
       bytes <- readBinaryFile f
       return (Right (parseRtf bytes))
+    Right FAbw -> do
+      -- Plain UTF-8 XML, no container: read as bytes so MiniMark.Xml
+      -- (not MicroHs's UTF-8 transducer) does the decoding, matching
+      -- the RTF reader's own reasoning for staying off the text path.
+      bytes <- BS.readFile f
+      return (Right (parseAbw bytes))
     Right fmt -> return (Left (f ++ ": " ++ formatName fmt
                                ++ " reader not implemented yet"))
     Left err -> return (Left (f ++ ": " ++ err))
@@ -147,12 +157,14 @@ classify ext pfx
 
 -- Extension fallback for inputs without magic (fodt is flat XML; an
 -- .rtf without the {\rtf brace is misnamed, but trust the name and
--- let the future rtf reader complain).  Everything else: markdown,
--- exactly as before T5.0.
+-- let the future rtf reader complain; .abw is likewise plain XML with
+-- no reliable magic of its own).  Everything else: markdown, exactly
+-- as before T5.0.
 extFormat :: String -> Format
 extFormat ext = case ext of
   "rtf"  -> FRtf
   "fodt" -> FOdt
+  "abw"  -> FAbw
   _      -> FMarkdown
 
 -- lowercase extension of the last path component, "" if none
