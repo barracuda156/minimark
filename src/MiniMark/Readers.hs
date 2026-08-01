@@ -33,6 +33,7 @@ import MiniMark.Reader(parseDocument)
 import MiniMark.RtfReader(parseRtf)
 import MiniMark.AbwReader(parseAbw)
 import MiniMark.OdtReader(parseFodt, parseOdt)
+import MiniMark.DocxReader(parseDocx)
 import MiniMark.Xml(xmlLooksUtf16)
 
 data Format = FMarkdown | FRtf | FOdt | FDocx | FIdml | FAbw
@@ -100,6 +101,11 @@ readDocFile mfmt f = do
         else if xmlLooksUtf16 bytes
           then return (Left (f ++ ": UTF-16 XML not supported"))
           else return (Right (parseFodt bytes))
+    Right FDocx -> do
+      -- OOXML zip container; a non-zip or corrupt file gets a clean
+      -- refusal from MiniMark.Zip's own errors inside parseDocx.
+      bytes <- BS.readFile f
+      parseDocx bytes
     Right fmt -> return (Left (f ++ ": " ++ formatName fmt
                                ++ " reader not implemented yet"))
     Left err -> return (Left (f ++ ": " ++ err))

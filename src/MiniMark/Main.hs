@@ -34,7 +34,7 @@ usage = unlines
   , "  -t FORMAT        term (default) | html | latex | man | rtf | abw | plain"
   , "  -f FORMAT        input: markdown (default) | rtf | odt | docx | idml | abw"
   , "                   auto-detected from magic bytes / extension;"
-  , "                   markdown, rtf, abw and odt/fodt readers are implemented so far"
+  , "                   markdown, rtf, abw, odt/fodt and docx readers are implemented so far"
   , "  -o FILE          write output to FILE"
   , "  -s, --standalone full document (html/latex)"
   , "  --color=MODE     auto (default) | none | 16 | true"
