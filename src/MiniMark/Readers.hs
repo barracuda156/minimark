@@ -32,6 +32,7 @@ import MiniMark.AST
 import MiniMark.Reader(parseDocument)
 import MiniMark.RtfReader(parseRtf)
 import MiniMark.AbwReader(parseAbw)
+import MiniMark.OdtReader(parseFodt, parseOdt)
 
 data Format = FMarkdown | FRtf | FOdt | FDocx | FIdml | FAbw
   deriving (Eq)
@@ -82,6 +83,16 @@ readDocFile mfmt f = do
       -- the RTF reader's own reasoning for staying off the text path.
       bytes <- BS.readFile f
       return (Right (parseAbw bytes))
+    Right FOdt -> do
+      -- fodt is flat XML (like abw); odt is the same body zipped, with
+      -- content.xml holding it.  -f odt/fodt both map to this one
+      -- Format, so tell them apart from the bytes themselves (a zip
+      -- always starts "PK") rather than trusting the flag/extension —
+      -- consistent with "detection order: magic beats extension".
+      bytes <- BS.readFile f
+      if BS.length bytes >= 2 && BS.index bytes 0 == 0x50 && BS.index bytes 1 == 0x4B
+        then parseOdt bytes
+        else return (Right (parseFodt bytes))
     Right fmt -> return (Left (f ++ ": " ++ formatName fmt
                                ++ " reader not implemented yet"))
     Left err -> return (Left (f ++ ": " ++ err))

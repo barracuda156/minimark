@@ -110,7 +110,7 @@ li o (ListItem mb bs) = "<li>" ++ checkPfx ++ tight ++ "</li>\n"
 table :: HtmlOpts -> [Align] -> [[Inline]] -> [[[Inline]]] -> String
 table o aligns hdr rows = concat
   [ "<table>\n<thead>\n<tr>"
-  , concat (zipWith (cell "th") aligns hdr)
+  , concat (zipWith (cell "th") (aligns ++ repeat ALeft) hdr)
   , "</tr>\n</thead>\n<tbody>\n"
   , concatMap trow rows
   , "</tbody>\n</table>\n"

@@ -82,7 +82,7 @@ block b = case b of
     "\\begin{quote}\n" ++ intercalate "\n" (map block bs') ++ "\\end{quote}\n"
   HRule -> "\\noindent\\hrulefill\n"
   Table aligns hdr rows ->
-    let colspec = map alChar aligns
+    let colspec = map alChar (take (length hdr) (aligns ++ repeat ALeft))
         alChar ALeft = 'l'
         alChar ACenter = 'c'
         alChar ARight = 'r'
