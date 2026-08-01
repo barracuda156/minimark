@@ -33,6 +33,7 @@ import MiniMark.Reader(parseDocument)
 import MiniMark.RtfReader(parseRtf)
 import MiniMark.AbwReader(parseAbw)
 import MiniMark.OdtReader(parseFodt, parseOdt)
+import MiniMark.Xml(xmlLooksUtf16)
 
 data Format = FMarkdown | FRtf | FOdt | FDocx | FIdml | FAbw
   deriving (Eq)
@@ -81,8 +82,12 @@ readDocFile mfmt f = do
       -- Plain UTF-8 XML, no container: read as bytes so MiniMark.Xml
       -- (not MicroHs's UTF-8 transducer) does the decoding, matching
       -- the RTF reader's own reasoning for staying off the text path.
+      -- UTF-16 must be refused here (XML spec §5): parseXml stays
+      -- total on such input but emits NUL-riddled garbage, not a Doc.
       bytes <- BS.readFile f
-      return (Right (parseAbw bytes))
+      return (if xmlLooksUtf16 bytes
+                then Left (f ++ ": UTF-16 XML not supported")
+                else Right (parseAbw bytes))
     Right FOdt -> do
       -- fodt is flat XML (like abw); odt is the same body zipped, with
       -- content.xml holding it.  -f odt/fodt both map to this one
@@ -92,7 +97,9 @@ readDocFile mfmt f = do
       bytes <- BS.readFile f
       if BS.length bytes >= 2 && BS.index bytes 0 == 0x50 && BS.index bytes 1 == 0x4B
         then parseOdt bytes
-        else return (Right (parseFodt bytes))
+        else if xmlLooksUtf16 bytes
+          then return (Left (f ++ ": UTF-16 XML not supported"))
+          else return (Right (parseFodt bytes))
     Right fmt -> return (Left (f ++ ": " ++ formatName fmt
                                ++ " reader not implemented yet"))
     Left err -> return (Left (f ++ ": " ++ err))

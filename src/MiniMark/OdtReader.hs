@@ -36,7 +36,7 @@ module MiniMark.OdtReader(parseFodt, parseOdt) where
 
 import Data.ByteString(ByteString)
 import MiniMark.AST
-import MiniMark.Xml(XmlEvent(..), parseXml, balanced, attr)
+import MiniMark.Xml(XmlEvent(..), parseXml, xmlLooksUtf16, balanced, attr)
 import MiniMark.Zip(zipEntries, zipFind, zipExtract)
 
 parseFodt :: ByteString -> Doc
@@ -53,8 +53,10 @@ parseOdt bs = case zipEntries bs of
     Just en -> do
       r <- zipExtract bs en
       case r of
-        Left e     -> return (Left ("content.xml: " ++ e))
-        Right cbs  -> return (Right (odtDoc (parseXml cbs)))
+        Left e -> return (Left ("content.xml: " ++ e))
+        Right cbs
+          | xmlLooksUtf16 cbs -> return (Left "content.xml: UTF-16 XML not supported")
+          | otherwise         -> return (Right (odtDoc (parseXml cbs)))
 
 --------------------------------------------------------------------------
 -- Shared core over a flat XmlEvent stream (fodt's whole file, or odt's
@@ -242,6 +244,21 @@ inlines :: [(String, StyleProps)] -> [XmlEvent] -> [Inline]
 inlines _ [] = []
 inlines tbl (XText t : rest) = Str t : inlines tbl rest
 inlines tbl (XStart "text:line-break" _ : rest) = LineBreak : inlines tbl rest
+-- ODF encodes whitespace structurally: <text:tab/> is a tab stop and
+-- <text:s text:c="N"/> a run of N spaces (default 1; LibreOffice emits
+-- one for any run of two or more).  Dropping them under the unknown-
+-- element rule would glue adjacent words together, so map them back to
+-- literal text ('\t' matching the RTF reader's \tab).  text:c is
+-- capped so a hostile attribute cannot balloon memory.
+inlines tbl (XStart "text:tab" _ : rest) =
+  let (_, after) = balanced rest
+  in Str "\t" : inlines tbl after
+inlines tbl (XStart "text:s" as : rest) =
+  let (_, after) = balanced rest
+      c = case attr "text:c" as of
+            Just v  -> max 0 (min 4096 (parseIntDefault 1 v))
+            Nothing -> 1
+  in Str (replicate c ' ') : inlines tbl after
 inlines tbl (XStart "text:span" as : rest) =
   let (inner, after) = balanced rest
       p = lookupStyle tbl (attr "text:style-name" as)

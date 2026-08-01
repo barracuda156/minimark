@@ -254,7 +254,7 @@ parseXml bs0 = go (skipBom 0)
     -- space each (XML attribute-value normalization), applied BEFORE
     -- entity resolution so a numeric ref can still produce a literal
     -- newline/tab in the value if the author really wants one.
-    resolveAttrValue raw = attrSpace (resolveOn (decodeUtf8 raw))
+    resolveAttrValue raw = resolveOn (attrSpace (decodeUtf8 raw))
     attrSpace s = map (\c -> if c == '\r' || c == '\n' || c == '\t' then ' ' else c) s
 
 -- ---------------- reference resolution over decoded String ----------
