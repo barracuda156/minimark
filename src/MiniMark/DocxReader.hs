@@ -97,9 +97,9 @@ findBody (_ : rest) = findBody rest
 -- docProps/core.xml -> Meta (dc:title, dc:creator, dcterms:created).
 
 metaOf :: [XmlEvent] -> Meta
-metaOf evs = Meta (elemText "dc:title" evs)
-                  (elemText "dc:creator" evs)
-                  (elemText "dcterms:created" evs)
+metaOf evs = emptyMeta{ mTitle  = elemText "dc:title" evs
+                      , mAuthor = elemText "dc:creator" evs
+                      , mDate   = elemText "dcterms:created" evs }
 
 elemText :: String -> [XmlEvent] -> Maybe String
 elemText _ [] = Nothing

@@ -1,25 +1,42 @@
 -- minimark: man/roff writer (-t man).  Math arrives already
 -- Unicode-rendered (bmp level, MathRender's renderMath) and is escaped
 -- through the same path as prose.
-module MiniMark.Man(renderMan) where
+module MiniMark.Man(ManOpts(..), renderMan) where
 
 import Data.List(intercalate)
 import MiniMark.AST
 import MiniMark.MathRender(GlyphLevel(..), renderMath)
 
--- Title is resolved by the caller (Main.hs's titleOf: --title flag >
--- mTitle > first filename) so precedence lives in one place.
-renderMan :: String -> Doc -> String
-renderMan title (Doc m bs) =
-  th title m ++ concatMap block bs
+-- Name and section are resolved by the caller (Main.hs's manOpts:
+-- --title flag > title block > input filename) so precedence lives in
+-- one place.  Date and manual header come straight off the Meta the
+-- title block produced.
+data ManOpts = ManOpts
+  { mnName    :: String
+  , mnSection :: String
+  }
 
--- .TH NAME SECTION [DATE] from the resolved title and Meta's date.
-th :: String -> Meta -> String
-th title m =
-  ".TH " ++ thArg title ++ " 7" ++ dateArg ++ "\n"
+renderMan :: ManOpts -> Doc -> String
+renderMan o (Doc m bs) =
+  th o m ++ concatMap block bs
+
+-- .TH NAME SECTION DATE FOOTER HEADER -- pandoc's argument order, and
+-- what groff's man macros expect: FOOTER is the left-hand page footer
+-- (we have nothing for it) and HEADER the centred manual title, e.g.
+--   .TH "NGS" "1" "2015" "" "NGS User Manual"
+-- Empty trailing arguments are dropped rather than emitted as "" runs.
+-- The name is upper-cased per man(7) convention.
+th :: ManOpts -> Meta -> String
+th o m = ".TH " ++ unwords (map thArg (dropTrailing args)) ++ "\n"
   where
-    dateArg = maybe "" (\d -> " " ++ thArg d) (mDate m)
-    thArg t = "\"" ++ concatMap thEsc (upperAscii t) ++ "\""
+    args = [ upperAscii (mnName o)
+           , mnSection o
+           , maybe "" id (mDate m)
+           , ""
+           , maybe "" id (mManual m)
+           ]
+    dropTrailing = reverse . dropWhile null . reverse
+    thArg t = "\"" ++ concatMap thEsc (esc t) ++ "\""
     thEsc '"' = "\\(dq"
     thEsc c   = [c]
     upperAscii = map upC

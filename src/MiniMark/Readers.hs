@@ -21,7 +21,8 @@
 -- blocks concatenate, the FIRST input's Meta wins (predictable, and
 -- byte-neutral while only markdown produces empty metas).
 module MiniMark.Readers(
-  Format(..), formatName, parseFormat,
+  Format(..), formatName, parseFormat, parseFromSpec,
+  MdOpts(..), defMdOpts,
   readDocFile, readDocStdin
 ) where
 
@@ -29,7 +30,7 @@ import System.IO
 import System.IO.Base(openBinaryFile)
 import qualified Data.ByteString as BS
 import MiniMark.AST
-import MiniMark.Reader(parseDocument)
+import MiniMark.Reader(MdOpts(..), defMdOpts, parseDocumentWith)
 import MiniMark.RtfReader(parseRtf)
 import MiniMark.AbwReader(parseAbw)
 import MiniMark.OdtReader(parseFodt, parseOdt)
@@ -47,7 +48,38 @@ formatName FDocx     = "docx"
 formatName FIdml     = "idml"
 formatName FAbw      = "abw"
 
--- Accepted -f / --from values.
+-- A whole -f / --from argument: a format name plus pandoc's "+ext" /
+-- "-ext" dialect suffixes (markdown+hard_line_breaks).  Accepting that
+-- spelling is what lets an existing pandoc command line keep working
+-- verbatim.  An unknown extension is refused by name rather than
+-- ignored -- silently dropping one would change the output without
+-- saying so.
+parseFromSpec :: String -> Either String (Format, MdOpts)
+parseFromSpec spec =
+  let (base, exts) = splitExts spec
+  in case parseFormat base of
+       Nothing -> Left ("unknown input format " ++ base
+                        ++ " (markdown, rtf, odt, docx, idml, abw)")
+       Just fmt -> case foldl applyExt (Right defMdOpts) exts of
+         Left e  -> Left e
+         Right o -> Right (fmt, o)
+  where
+    applyExt (Left e) _ = Left e
+    applyExt (Right o) (on, name) = case name of
+      "hard_line_breaks" -> Right o{moHardBreaks = on}
+      _ -> Left ("unknown format extension " ++ name
+                 ++ " (supported: hard_line_breaks)")
+
+-- "markdown+a-b" -> ("markdown", [(True, "a"), (False, "b")]).
+splitExts :: String -> (String, [(Bool, String)])
+splitExts s = let (base, rest) = break isSep s in (base, go rest)
+  where
+    isSep c = c == '+' || c == '-'
+    go (c:r) | isSep c = let (name, r') = break isSep r
+                         in (c == '+', name) : go r'
+    go _ = []
+
+-- Accepted bare format names (no extension suffixes).
 parseFormat :: String -> Maybe Format
 parseFormat s = case s of
   "markdown" -> Just FMarkdown
@@ -63,15 +95,15 @@ parseFormat s = case s of
 -- Read one named input.  Left = user-facing refusal (reader not
 -- implemented, unusable container); IO errors (missing file) propagate
 -- like they always have.
-readDocFile :: Maybe Format -> FilePath -> IO (Either String Doc)
-readDocFile mfmt f = do
+readDocFile :: Maybe Format -> MdOpts -> FilePath -> IO (Either String Doc)
+readDocFile mfmt mdOpts f = do
   efmt <- case mfmt of
             Just fmt -> return (Right fmt)
             Nothing  -> sniffFile f
   case efmt of
     Right FMarkdown -> do
       txt <- readFile f
-      return (Right (parseDocument txt))
+      return (Right (parseDocumentWith mdOpts txt))
     Right FRtf -> do
       -- RTF is 7-bit ASCII + \'xx / \uN escapes, but may carry raw
       -- cp1252/MacRoman high bytes; read it through a binary handle so
@@ -110,8 +142,8 @@ readDocFile mfmt f = do
                                ++ " reader not implemented yet"))
     Left err -> return (Left (f ++ ": " ++ err))
 
-readDocStdin :: Maybe Format -> IO (Either String Doc)
-readDocStdin mfmt = case mfmt of
+readDocStdin :: Maybe Format -> MdOpts -> IO (Either String Doc)
+readDocStdin mfmt mdOpts = case mfmt of
   Just FMarkdown -> md
   Nothing        -> md
   -- RTF is a text format (7-bit ASCII + \'xx escapes), so it can come
@@ -127,7 +159,7 @@ readDocStdin mfmt = case mfmt of
   where
     md = do
       txt <- getContents
-      return (Right (parseDocument txt))
+      return (Right (parseDocumentWith mdOpts txt))
 
 -- Read a whole file as raw bytes-as-Chars through a binary handle.
 -- hGetContents is lazy; force the entire string (seqList) before the

@@ -21,8 +21,8 @@ renderLatex o (Doc m bs) =
 -- note §1); omitted fields omitted, but \date{} emitted empty when
 -- author is set and date isn't, to suppress TeX's default today's date.
 metaBlock :: Meta -> String
-metaBlock (Meta Nothing Nothing Nothing) = ""
-metaBlock (Meta mt ma md) = concat
+metaBlock (Meta Nothing Nothing Nothing _ _) = ""
+metaBlock (Meta mt ma md _ _) = concat
   [ maybe "" (\t -> "\\title{" ++ escT t ++ "}\n") mt
   , maybe "" (\a -> "\\author{" ++ escT a ++ "}\n") ma
   , case (ma, md) of

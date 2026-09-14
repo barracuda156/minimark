@@ -1,4 +1,4 @@
-.TH "INPUTS/EXTENSIONS.MD" 7
+.TH "EXTENSIONS" "7"
 .SH "Extensions"
 .PP
 Corpus for Phase 1 markdown constructs added after the initial pipeline. Accumulates across tasks \[u2014] add new sections, don't replace old ones.

@@ -13,12 +13,13 @@ import MiniMark.AST
 import MiniMark.Bytes(decodeUtf8)
 import MiniMark.Inflate(gunzip)
 import MiniMark.Zip(ZipEntry(..), zipEntries, zipFind, zipExtract)
-import MiniMark.Readers(parseFormat, readDocFile, readDocStdin)
+import MiniMark.Readers(MdOpts(..), defMdOpts, parseFromSpec,
+                        readDocFile, readDocStdin)
 import MiniMark.MathRender(GlyphLevel(..))
 import MiniMark.Ansi(ColorMode(..), LinkMode(..), AnsiOpts(..), renderAnsi)
 import MiniMark.Html(HtmlOpts(..), renderHtml)
 import MiniMark.Latex(LatexOpts(..), renderLatex)
-import MiniMark.Man(renderMan)
+import MiniMark.Man(ManOpts(..), renderMan)
 import MiniMark.Rtf(renderRtf)
 import MiniMark.Abw(renderAbw)
 
@@ -35,8 +36,12 @@ usage = unlines
   , "  -f FORMAT        input: markdown (default) | rtf | odt | docx | idml | abw"
   , "                   auto-detected from magic bytes / extension;"
   , "                   markdown, rtf, abw, odt/fodt and docx readers are implemented so far"
+  , "                   pandoc's +/-extension suffixes are accepted, e.g."
+  , "                   -f markdown+hard_line_breaks"
   , "  -o FILE          write output to FILE"
   , "  -s, --standalone full document (html/latex)"
+  , "  --hard-line-breaks  treat every newline inside a paragraph as a line"
+  , "                   break (same switch as -f markdown+hard_line_breaks)"
   , "  --color=MODE     auto (default) | none | 16 | true"
   , "  --glyphs=LEVEL   bmp (default) | full | ascii"
   , "                   full: plane-1 math alphabets (needs good fonts)"
@@ -64,6 +69,7 @@ data Opts = Opts
   , oWidth      :: Maybe Int
   , oItalics    :: Maybe Bool
   , oStandalone :: Bool
+  , oHardBreaks :: Bool
   , oTitle      :: String
   , oLinks      :: String
   , oZip        :: Maybe String
@@ -72,8 +78,8 @@ data Opts = Opts
   }
 
 defOpts :: Opts
-defOpts = Opts "term" Nothing Nothing "auto" "bmp" Nothing Nothing False "" "off"
-               Nothing False []
+defOpts = Opts "term" Nothing Nothing "auto" "bmp" Nothing Nothing False False ""
+               "off" Nothing False []
 
 main :: IO ()
 main = do
@@ -87,23 +93,26 @@ main = do
 
 convert :: Opts -> IO ()
 convert opts = do
-  ffmt <- case oFrom opts of
-            Nothing -> return Nothing
-            Just s -> case parseFormat s of
-              Just fm -> return (Just fm)
-              Nothing -> die ("unknown input format " ++ s
-                              ++ " (markdown, rtf, odt, docx, idml, abw)")
+  (ffmt, mdOpts0) <- case oFrom opts of
+    Nothing -> return (Nothing, defMdOpts)
+    Just s  -> case parseFromSpec s of
+      Right (fm, o) -> return (Just fm, o)
+      Left err      -> die err
+  -- --hard-line-breaks and -f markdown+hard_line_breaks are the same
+  -- switch; the flag only ever turns it on, so "-f markdown-hard_line_breaks
+  -- --hard-line-breaks" resolves to on, like any later-wins flag pair.
+  let mdOpts = if oHardBreaks opts then mdOpts0{moHardBreaks = True} else mdOpts0
   eds <- case oFiles opts of
-           [] -> fmap (: []) (readDocStdin ffmt)
-           fs -> mapM (readF ffmt) fs
+           [] -> fmap (: []) (readDocStdin ffmt mdOpts)
+           fs -> mapM (readF ffmt mdOpts) fs
   doc <- either die return (combineDocs eds)
   out <- render opts doc
   case oOut opts of
     Nothing -> putStr out
     Just f  -> writeFile f out
   where
-    readF fm "-" = readDocStdin fm
-    readF fm f   = readDocFile fm f
+    readF fm o "-" = readDocStdin fm o
+    readF fm o f   = readDocFile fm o f
 
 -- Error exits go through libc exit() directly: the MicroHs runtime
 -- special-cases only ExitSuccess, an ExitFailure throw surfaces as
@@ -140,6 +149,7 @@ parseArgs o (a:as) = case a of
   "-o"           -> withVal as (\v r -> parseArgs o{oOut = Just v} r)
   "-s"           -> parseArgs o{oStandalone = True} as
   "--standalone" -> parseArgs o{oStandalone = True} as
+  "--hard-line-breaks" -> parseArgs o{oHardBreaks = True} as
   "--gunzip"     -> parseArgs o{oGunzip = True} as
   "--ascii"      -> parseArgs o{oGlyphs = "ascii"} as
   _ | Just v <- eqOpt "--color" a   -> parseArgs o{oColor = v} as
@@ -243,12 +253,45 @@ render o doc = case oFmt o of
     | f `elem` ["latex", "tex"] ->
         return (renderLatex (LatexOpts (oStandalone o)) doc)
     | f == "man" ->
-        return (renderMan (titleOf o doc) doc)
+        return (renderMan (manOpts o doc) doc)
     | f == "rtf" ->
         return (renderRtf doc)
     | f == "abw" ->
         return (renderAbw doc)
     | otherwise -> die ("unknown format " ++ f)
+
+-- .TH arguments.  Name: --title flag > title block / front matter >
+-- the input filename.  Section: the title block's "NAME(1)" > a ".1"
+-- suffix on the filename (how man sources are named) > 7, the
+-- traditional catch-all for a page that never says.
+manOpts :: Opts -> Doc -> ManOpts
+manOpts o (Doc m _) = ManOpts name section
+  where
+    (fname, fsec) = manNameSection (case oFiles o of (f:_) -> f; [] -> "minimark")
+    name | not (null (oTitle o)) = oTitle o
+         | Just t <- mTitle m    = t
+         | otherwise             = fname
+    section | Just sc <- mSection m = sc
+            | Just sc <- fsec       = sc
+            | otherwise             = "7"
+
+-- "ngs/doc/ngs.1.md" -> ("ngs", Just "1"): basename, ".md" dropped,
+-- then a trailing ".N" read as the section.  The suffix counts only
+-- when it starts with a digit, so "notes.txt" keeps its whole name.
+manNameSection :: String -> (String, Maybe String)
+manNameSection p =
+  let b = dropExt ".md" (baseName p)
+  in case break (== '.') (reverse b) of
+       (rsec, _:rnm)
+         | not (null rsec) && not (null rnm) && isDigC (last rsec) ->
+             (reverse rnm, Just (reverse rsec))
+       _ -> (b, Nothing)
+  where
+    baseName = reverse . takeWhile (/= '/') . reverse
+    isDigC c = c >= '0' && c <= '9'
+    dropExt e t = let n = length e
+                  in if length t > n && drop (length t - n) t == e
+                       then take (length t - n) t else t
 
 -- <title> precedence: --title flag > mTitle (front matter) > first filename.
 titleOf :: Opts -> Doc -> String

@@ -32,8 +32,8 @@ footer = "</section>\n</abiword>\n"
 -- Title block (bold Heading-1-style <p>) + byline (author · date,
 -- italic), only when Meta carries something — mirrors Rtf.hs's shape.
 metaBlock :: Meta -> String
-metaBlock (Meta Nothing Nothing Nothing) = ""
-metaBlock (Meta mt ma md) = concat
+metaBlock (Meta Nothing Nothing Nothing _ _) = ""
+metaBlock (Meta mt ma md _ _) = concat
   [ maybe "" (\t -> para "Heading 1" "" (cspan "font-weight:bold" (esc t))) mt
   , maybe "" (para "Normal" "font-style:italic" . esc) byline
   ]

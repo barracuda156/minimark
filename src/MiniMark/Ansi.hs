@@ -260,8 +260,8 @@ renderAnsi o (Doc m bs) =
 -- bold (H1 heading style, no underline bar), byline "author · date"
 -- dim (only fields present), blank line, then body.
 metaLines :: AnsiOpts -> Meta -> [String]
-metaLines o (Meta Nothing Nothing Nothing) = []
-metaLines o (Meta mt ma md) =
+metaLines o (Meta Nothing Nothing Nothing _ _) = []
+metaLines o (Meta mt ma md _ _) =
   [emit o (headingStyle 1) t | Just t <- [mt]]
   ++ [emit o plainS{sDim = True} b | Just b <- [byline]]
   where

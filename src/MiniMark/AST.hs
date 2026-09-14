@@ -8,13 +8,18 @@ module MiniMark.AST where
 data Doc = Doc Meta [Block]
 
 data Meta = Meta
-  { mTitle  :: Maybe String
-  , mAuthor :: Maybe String
-  , mDate   :: Maybe String
+  { mTitle   :: Maybe String
+  , mAuthor  :: Maybe String
+  , mDate    :: Maybe String
+  , mSection :: Maybe String   -- man section, from a "NAME(1)" title block
+  , mManual  :: Maybe String   -- man page header ("NGS User Manual")
   }
 
+-- mSection/mManual only ever come from a pandoc percent title block
+-- (Reader), and only the man writer reads them; every other writer
+-- goes through mTitle/mAuthor/mDate as before.
 emptyMeta :: Meta
-emptyMeta = Meta Nothing Nothing Nothing
+emptyMeta = Meta Nothing Nothing Nothing Nothing Nothing
 
 data Block
   = Heading Int [Inline]

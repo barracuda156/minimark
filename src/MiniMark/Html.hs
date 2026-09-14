@@ -26,8 +26,8 @@ renderHtml o (Doc m bs) =
 -- mode when a field is present; fragments skip meta entirely (design
 -- note: the embedder owns the page).
 metaHeader :: Meta -> String
-metaHeader (Meta Nothing Nothing Nothing) = ""
-metaHeader (Meta mt ma md) = concat
+metaHeader (Meta Nothing Nothing Nothing _ _) = ""
+metaHeader (Meta mt ma md _ _) = concat
   [ "<header>\n"
   , maybe "" (\t -> "<h1 class=\"title\">" ++ esc t ++ "</h1>\n") mt
   , maybe "" (\b -> "<p class=\"byline\">" ++ esc b ++ "</p>\n") byline

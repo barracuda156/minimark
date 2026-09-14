@@ -36,8 +36,8 @@ colortbl = concatMap rgb
 -- Title bold \fs48, byline dim-ish (gray color) \fs20, blank \par
 -- before body (design note's term/plain shape, adapted to RTF sizes).
 metaBlock :: Meta -> String
-metaBlock (Meta Nothing Nothing Nothing) = ""
-metaBlock (Meta mt ma md) = concat
+metaBlock (Meta Nothing Nothing Nothing _ _) = ""
+metaBlock (Meta mt ma md _ _) = concat
   [ maybe "" (\t -> "\\fs48\\b " ++ esc t ++ "\\b0\\fs24\\par\n") mt
   , maybe "" (\b -> "\\fs20\\cf6 " ++ esc b ++ "\\cf0\\fs24\\par\n") byline
   , "\\par\n"
