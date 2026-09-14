@@ -62,6 +62,6 @@ allbox;
 l c r
 .
 Tool	Year	Notes
-\f(CWmhs\fR	2023	MicroHs \fBcompiler\fR
+\f(CRmhs\fR	2023	MicroHs \fBcompiler\fR
 groff	1990	\fIroff\fR successor
 .TE

@@ -50,9 +50,15 @@ block b = case b of
     | n == 2    -> ".SS " ++ quoted (inlines is) ++ "\n"
     | otherwise -> ".PP\n\\fB" ++ inlines is ++ "\\fR\n"
   Para is -> ".PP\n" ++ breakLines (inlines is) ++ "\n"
+  -- .nf/.fi, not .EX/.EE: an-ext.tmac only gained .EX in groff 1.20 and
+  -- macOS still ships 1.19.2, where an undefined macro is silently
+  -- ignored and the block reflows as prose.  CR, not CW: an.tmac maps
+  -- CR/CI/CB/CBI onto the tty fonts under .if n (CW is not in that
+  -- table) and groff 1.24 warns "cannot select font 'CW'".
   CodeBlock _ lns ->
-    ".\\\" groff 1.22+: .EX/.EE; falls back to .nf/.fi on older groff\n"
-    ++ ".EX\n" ++ intercalate "\n" (map (textLines . escCode) lns) ++ "\n.EE\n"
+    ".nf\n.ft CR\n"
+    ++ intercalate "\n" (map (textLines . escCode) lns)
+    ++ "\n.ft R\n.fi\n"
   BulletList items -> concatMap bulletItem items
   OrderedList start items ->
     concat (zipWith orderedItem [start ..] items)
@@ -132,7 +138,7 @@ inlines = concatMap f
     f (Emph is) = "\\fI" ++ inlines is ++ "\\fR"
     f (Strong is) = "\\fB" ++ inlines is ++ "\\fR"
     f (Strike is) = inlines is
-    f (CodeSpan t) = "\\f(CW" ++ escCode t ++ "\\fR"
+    f (CodeSpan t) = "\\f(CR" ++ escCode t ++ "\\fR"
     f (Link txt url _) = inlines txt ++ " (" ++ esc url ++ ")"
     f (Image alt url _) = "[image: " ++ esc (flatText alt) ++ "] (" ++ esc url ++ ")"
     f (MathI raw es) = mathText raw es
